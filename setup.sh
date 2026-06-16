@@ -1,2 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Error><Code>AccessDenied</Code><Message>Access Denied.</Message><Key>setup.sh</Key><BucketName>openclaw</BucketName><Resource>/openclaw/setup.sh</Resource><Region>eu-centra-1</Region><RequestId>18B9A69DB290193B</RequestId><HostId>dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8</HostId></Error>

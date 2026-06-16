@@ -1692,3 +1692,26 @@ So hat jeder TN den gleichen Startpunkt.
 ---
 
 *Viel Erfolg bei der Schulung! 🚀*
+
+
+---
+
+## 📦 Beispiel-Projekte zum Durchspielen
+
+Jedes Projekt enthält mehrere Branches/Szenarien — einfach entpacken und loslegen:
+
+| Projekt | Beschreibung | Szenarien |
+|---------|-------------|-----------|
+| **merge-strategies-beispiel.tar.gz** | 🌌 Starport 42 | FF-Merge, 3-Way, Konflikt, Rebase, Cherry-Pick |
+| **reset-recovery-beispiel.tar.gz** | 🔄 Taschenrechner | reset --soft/mixed/hard, revert, reflog, restore |
+| **rebase-interactive-beispiel.tar.gz** | ✏️ Reiseblog | squash, fixup, reword, reorder, drop, edit, autosquash |
+| **hooks-automation-beispiel.tar.gz** | 🔗 Python-App | pre-commit, commit-msg, pre-push, post-commit, post-merge |
+
+Jedes `.tar.gz` enthält ein fertiges Git-Repo. Einfach:
+```bash
+tar xzf beispiel.tar.gz
+cd beispiel
+git log --oneline --graph --all --decorate
+# Dann die Szenario-Anweisungen im Terminal-Output folgen
+```
+
