@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>AccessDenied</Code><Message>Access Denied.</Message><Key>Git_Aufbau_Trainerleitfaden_LiveDemos.md</Key><BucketName>openclaw</BucketName><Resource>/openclaw/Git_Aufbau_Trainerleitfaden_LiveDemos.md</Resource><Region>eu-centra-1</Region><RequestId>18B9A69DAB3C57CA</RequestId><HostId>dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8</HostId></Error>
