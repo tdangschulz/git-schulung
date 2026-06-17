@@ -58,8 +58,8 @@ Die erste Konfiguration nach der Git-Installation:
 
 ```bash
 # Wer bist du? (wird in jeden Commit übernommen)
-git config --global user.name "Pascal Reichert"
-git config --global user.email "pascal@example.com"
+git config --global user.name "TestUser"
+git config --global user.email "testuser@example.com"
 
 # Welcher Editor? (für merge-commits, rebase -i, etc.)
 git config --global core.editor "code --wait"     # VS Code
