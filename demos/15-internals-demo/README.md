@@ -20,18 +20,56 @@ find .git -type f | head -20
 # → .git/refs/heads/main
 # → .git/logs/HEAD
 
-# Was ist HEAD? Ein Zeiger auf den aktuellen Branch
+# Was ist HEAD? Die Datei die sagt wo du bist
 cat .git/HEAD
 # → ref: refs/heads/main
-# HEAD zeigt nicht direkt auf einen Commit,
-# sondern auf den Branch-Namen. Der Branch zeigt auf den Commit.
-# Git fragt also: HEAD → "main" → Hash
+
+# !!! HEAD IST KEIN COMMIT !!!
+# HEAD ist ein INDIRECT REFERENCE — es zeigt auf einen Branch-Namen,
+# nicht direkt auf einen Commit.
+# Git muss erst HEAD lesen → "main" → dann in die Datei refs/heads/main schauen
+# → da steht der Commit-Hash. Zwei Schritte!
+
+# In Detached-HEAD sieht das anders aus:
+git checkout HEAD~1  # geh einen Commit zurück → Detached HEAD!
+cat .git/HEAD
+# → 73de0724... EIN COMMIT-HASH, KEIN BRANCH!
+# Jetzt zeigt HEAD DIREKT auf den Commit, ohne Umweg über einen Branch.
+# Deshalb heißt es "Detached HEAD" — der Zeiger hat keinen Branch-Namen mehr
+# und bewegt sich nicht automatisch, wenn du commitest.
+# Ein neuer Commit in Detached-HEAD ist "verwaist" — nur der Reflog findet ihn noch.
+
+# Zurück zum normalen Zustand:
+git switch main
+cat .git/HEAD
+# → ref: refs/heads/main (wieder indirekt)
+
+# Was passiert beim git switch?
+# 1. Git liest .git/HEAD → ref: refs/heads/feature/hallo-name
+# 2. Git sucht den Hash in .git/refs/heads/feature/hallo-name
+# 3. Git updated die drei Bäume (HEAD, Index, Working Dir) auf diesen Hash
+# 4. Git schreibt den neuen Referenz-Pfad in .git/HEAD
+# ZACK — du bist auf einem anderen Branch.
+# Alles was Git tut: Dateien lesen und schreiben. Kein "Branch wechseln"-Befehl auf Systemebene.
+
+# Die Auflösungskette (Resolve):
+# HEAD → ref: refs/heads/main → 73de0724... → Commit-Objekt → Tree → Blobs
+# Alles nur Textdateien und Hashes!
 
 # Ein Branch ist nur eine Datei mit einem Hash
 cat .git/refs/heads/main
 # → 73de0724...
 # Das wars. 40 Hex-Zeichen. Ein Branch kostet dich 41 Byte.
 # Jeder Branch, jeder Tag — alles nur Dateien mit Hashes.
+
+# Wenn du einen Commit machst:
+# 1. Git erstellt einen neuen Commit (neues Objekt in .git/objects/)
+# 2. Git SCHREIBT den neuen Hash in .git/refs/heads/main (überschreibt!)
+# 3. Git updated .git/logs/HEAD (Reflog-Eintrag)
+# Der Branch-Zeiger WANDERT automatisch zum neuen Commit.
+# Der alte Commit bleibt als Objekt erhalten (Parent-Kette).
+# Deshalb ist Git-History unveränderlich — du überschreibst nur den Zeiger,
+# niemals die Objekte selbst.
 ```
 
 **Erklärung warum das wichtig ist:** Weil Branches so billig sind, macht Git keine Aufhebens darum. Ein neuer Branch kostet nichts. `git branch feature/xyz` schreibt 41 Byte in eine Datei. Fertig. Deshalb ist Git so anders als SVN oder CVS — dort war ein Branch ein teurer Kopiervorgang vom gesamten Repository. In Git: 41 Byte.
