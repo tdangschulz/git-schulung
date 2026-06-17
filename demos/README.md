@@ -1,6 +1,6 @@
 # Git-Schulung — Demos
 
-13 interaktive Live-Demos für den Git-Workshop.
+14 interaktive Live-Demos für den Git-Workshop.
 
 ## Setup
 
@@ -36,6 +36,7 @@ bash setup-demos.sh     # Frisch entpacken
 | 11 | diff3 | Konflikte mit Vorfahren-Ansicht | `git merge feature/dark` |
 | 12 | Rerere | Automatische Konfliktlösung | `git merge feature/v2` |
 | 13 | Trunk | Feature-Flags statt Branches | Code in app.py einfügen |
+| 14 | Git Hooks | Client-seitige Hooks (pre-commit, commit-msg, pre-push) | `bash scripts/install-hooks.sh`
 
 ## Tipp für Live-Demos
 
