@@ -51,6 +51,7 @@ git diff            git restore --staged
 > **Eselsbrücke:** `git diff` = unstaged, `git diff --staged` = staged.
 >
 > Funktioniert auch mit Dateinamen: `git diff --staged datei.txt` zeigt nur was von der einen Datei staged ist.
+
 | `git add <datei>` | **Nimmt Datei in die Staging Area** (Staging). Erst danach "weiß" Git von der Datei. |
 | `git add .` | **Nimmt ALLE Dateien** im aktuellen Ordner in die Staging Area. Praktisch, aber Vorsicht: auch ungewollte Dateien! |
 | `git add -p` | **Interaktives Staging.** Zeigt jede Änderung einzeln. `y` = ja, `n` = nein, `s` = splitten. Perfekt für atomare Commits! |
