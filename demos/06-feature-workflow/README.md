@@ -43,3 +43,14 @@ Start: main enthält `README.md` mit "main".
    `git switch -c feature/header-fix`
    Ändere im `index.html` die Überschrift (sofern vorhanden) oder füge eine Zeile in `style.css` hinzu.
    Merges mit `--no-ff` in main.
+
+## ⚠️ Typische Praxisprobleme
+
+**❗ --no-ff vergessen:** Feature-Branch per Fast-Forward gemergt — kein Merge-Commit.
+→ Für Features/PRs immer \`--no-ff\`, sonst sieht man nicht was zusammengehört.
+
+**❗ Branch nach Merge nicht gelöscht:** Alte Branches sammeln sich.
+→ \`git branch -d feature/alt\` (lokal) + \`git push origin -d feature/alt\` (remote).
+
+**❗ Feature-Branch nie gemergt:** Arbeit fertig, aber PR hängt seit Wochen.
+→ Kleine, schnelle PRs. Lieber 5 kleine Branches als ein Riesen-Feature.

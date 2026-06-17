@@ -71,3 +71,14 @@ Start: `file.txt` mit "start".
 | `--no-ff` | Ja | Sichtbarer Merge | Features, Releases |
 | `--squash` | Nein | Linear | Kleine Fixes |
 | `--ff-only` | Nein | Linear | Nur bei sauberer Basis |
+
+## ⚠️ Typische Praxisprobleme
+
+**❗ --squash vergessen:** 15 Zwischen-Commits landen auf main statt einem sauberen.
+→ \`git merge --squash feature/branch\` für kleine Fixes.
+
+**❗ --ff-only schlägt fehl:** Weil main parallel weiterentwickelt wurde.
+→ Feature-Branch vorher rebasen: \`git rebase main\`, dann \`git merge --ff-only\`.
+
+**❗ --no-ff auf main:** Erzeugt Merge-Commits auch bei Fast-Forward-Möglichkeit.
+→ Das ist der Standard für PRs, aber nicht auf jedem Branch sinnvoll.

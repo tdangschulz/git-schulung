@@ -79,3 +79,14 @@ Enthält:
 
 11. **History vergleichen**
     `git log --oneline --graph --all`
+
+## ⚠️ Typische Praxisprobleme
+
+**❗ Auf dem falschen Branch committed:** Du bist auf \`main\`, willst aber auf \`feature/xyz\`.
+→ Lösung: \`git switch -c feature/xyz\`, dann Commit ist da. \`git switch main\` und \`git reset --hard HEAD~1\` zum Bereinigen.
+
+**❗ Fast-Forward nicht möglich:** \`git merge feature/xyz\` macht einen 3-Way-Merge, weil main eigene Commits hat.
+→ Kein Fehler! Aber wenn du lineare History willst: vorher \`git rebase main\` im Feature-Branch.
+
+**❗ Merge-Konflikt beim 3-Way-Merge:** Beide Branches haben die gleiche Zeile geändert.
+→ \`cat datei.txt\` zeigt \`<<<<<<<\` Markierungen. Manuell auflösen, dann \`git add datei.txt && git commit\`

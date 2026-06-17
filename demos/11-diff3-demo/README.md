@@ -52,3 +52,14 @@ Start: `theme.txt` mit drei Zeilen.
 
 7. **Global aktivieren** (damit man's nie wieder vergisst)
    `git config --global merge.conflictstyle diff3`
+
+## ⚠️ Typische Praxisprobleme
+
+**❗ Ohne diff3 fehlt der Vorfahr:** Man rät nur zwischen zwei Versionen.
+→ \`git checkout --conflict=diff3 theme.txt\` — sofort besser.
+
+**❗ diff3 vergessen nachzurüsten:** Einmal aktiviert nie wieder drüber nachgedacht.
+→ Global setzen: \`git config --global merge.conflictstyle diff3\`
+
+**❗ Zu viele Konflikte auf einmal:** 20+ Dateien bei großen Merges.
+→ Einfach von oben nach unten durcharbeiten. \`git status\` zeigt die Reihenfolge.

@@ -61,3 +61,14 @@ Start: `file.txt` mit "Initial".
    `git cherry-pick <hash-des-verlorenen-commits>`
 
 8. **Lektion:** Wann darf man rebasen? → Nur auf privaten, ungepush ten Branches!
+
+## ⚠️ Typische Praxisprobleme
+
+**❗ Force-Push ohne --with-lease:** \`git push --force\` überschreibt blind.
+→ IMMER \`git push --force-with-lease\` verwenden.
+
+**❗ Commits verloren durch Rebase + Force-Push:** Kollege hat deinen Branch rebased.
+→ Rettung: \`git reflog\` auf dem alten Stand, dann \`git cherry-pick\` der verlorenen Commits.
+
+**❗ Shared Feature-Branch:** Zwei Leute arbeiten auf dem gleichen Branch.
+→ Vorher absprechen wer rebased. Am besten jeder seinen eigenen Branch.

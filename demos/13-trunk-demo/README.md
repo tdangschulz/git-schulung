@@ -49,3 +49,14 @@ Enthält:
    - Vorteil: Kein langer Branch, kein großer Merge am Ende
    - Nachteil: Alte Code-Pfade bleiben erstmal im Code
    - Wann löscht man das Feature-Flag? → Wenn das Feature stabil ist und alle es nutzen
+
+## ⚠️ Typische Praxisprobleme
+
+**❗ Feature-Flag nie entfernt:** Alter Code liegt tot im Repository.
+→ Regelmäßig alte Flags suchen und tote Codepfade entfernen.
+
+**❗ Zu viele Flags:** 100+ Flags in der Config — niemand weiß mehr was aktiv ist.
+→ Flags dokumentieren + mit Datum versehen.
+
+**❗ Flag nicht getestet:** Beide Zustände (True/False) müssen funktionieren.
+→ Tests für beide Pfade schreiben.

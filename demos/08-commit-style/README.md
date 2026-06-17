@@ -49,3 +49,17 @@ Der Ordner ist leer — der Trainer erstellt die Dateien live.
    - Einfacheres Revert & Cherry-Pick
    - Klarere Code-Review-Historie
    - `git bisect` findet den Fehler exakter
+
+## ⚠️ Typische Praxisprobleme
+
+**❗ Commit-Nachricht sagt nichts:** \`git commit -m "update"\` oder \`git commit -m "fix"\`
+→ 3 Monate später weiß niemand mehr warum. Immer das WARUM beschreiben.
+
+**❗ Zu große Commits:** 20 Dateien mit 5 verschiedenen Themen in einem Commit.
+→ Unmöglich zu reviewen/revertieren. \`git add -p  für atomare Commits!
+
+**❗ Zu viele Mini-Commits:** Jede Mini-Änderung einzeln committed.
+→ Vor Push \`git rebase -i HEAD~5\` und unnötige squashen.
+
+**❗ Falscher Autor:** \`git config user.email\` falsch.
+→ \`git commit --amend --author="Name <email>"\` (nur wenn ungepusht)

@@ -55,3 +55,14 @@ Start: `datei.txt` mit "Dev A's Arbeit".
 
 8. **Jetzt pushen**
    `git push origin main`
+
+## ⚠️ Typische Praxisprobleme
+
+**❗ Push rejected (non-fast-forward):** Du hast vergessen vor dem Push zu pullen.
+→ \`git pull --rebase origin main\` — holt neue Commits + setzt deine drauf.
+
+**❗ Merge-Konflikt beim Pull:** Weil du + Kollege die gleiche Datei geändert habt.
+→ \`git status\` zeigt conflicted files. Lösen, adden, \`git rebase --continue\`.
+
+**❗ Unabsichtlich gemergt statt rebased:** \`git pull\` ohne \`--rebase\` erzeugt Merge-Commit.
+→ \`git reset --hard ORIG_HEAD\` und dann \`git pull --rebase\`

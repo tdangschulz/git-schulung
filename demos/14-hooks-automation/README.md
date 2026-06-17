@@ -103,3 +103,17 @@ git commit -m "BUG: Schlechten Code"           # ✅ Format ok
 - **post-commit / post-merge** können NICHT abbrechen (laufen immer durch)
 - Hooks sind **client-seitig** — jeder muss sie selbst installieren
 - Hooks in `.githooks/` werden **versioniert** — automatisch im Team verteilt
+
+## ⚠️ Typische Praxisprobleme
+
+**❗ Hooks nicht installiert:** \`git clone\` — Team hat die Hooks nicht.
+→ \`bash scripts/install-hooks.sh\` oder \`git config core.hooksPath .githooks\`
+
+**❗ --no-verify als Standard:** Hooks werden systematisch umgangen → sinnlos.
+→ Nur in echten Ausnahmefällen umgehen.
+
+**❗ Hooks zu langsam:** Ein Hook der 30s braucht wird irgendwann umgangen.
+→ Hooks schlank halten, schwere Checks in die CI.
+
+**❗ Hooks nur lokal:** Andere im Team haben sie nicht.
+→ Hooks ins Repo einchecken (.githooks/) + Installation dokumentieren.

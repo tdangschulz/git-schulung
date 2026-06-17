@@ -48,3 +48,16 @@ Start: `datei.txt` enthält "Zeile 1".
 8. **Optional: Merge-Vergleich**
    Mach dasselbe Szenario nochmal und merge statt rebase.
    Welchen Unterschied siehst du in der History?
+
+## ⚠️ Typische Praxisprobleme
+
+**❗ Hashes ändern sich beim Rebase:** Die Commits sehen gleich aus, haben aber neue Hashes.
+→ Das ist kein Bug, sondern gewollt! Weil die Commits einen neuen Parent bekommen.
+
+**❗ Rebase abbrechen:** \`git rebase --abort\` — alles wie vorher. Keine Panik!
+
+**❗ Auf gepushte Commits rebasen:** Schon geteilte Commits rebasen = andere haben Chaos.
+→ Goldene Regel: Nie rebasen was auf dem Remote liegt und von anderen gezogen wurde.
+
+**❗ Merge-Konflikt während Rebase:** Ein Commit kann nicht sauber angewendet werden.
+→ Konflikt lösen, \`git add datei.txt\`, \`git rebase --continue\`

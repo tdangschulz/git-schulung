@@ -42,3 +42,14 @@ Diese Datei dient als erster Einstieg in den Git-Workflow.
 
 8. **History anzeigen**
    `git log --oneline --graph`
+
+## ⚠️ Typische Praxisprobleme
+
+**❗ Vim-Falle:** Nach \`git commit\` ohne \`-m\` öffnet sich Vim.
+→ \`:wq\` zum Speichern + Schließen. Oder: \`git config --global core.editor "nano"\`
+
+**❗ Git add vergessen:** \`git status\` zeigt rote Dateien — die sind NICHT im Commit!
+→ Erst \`git add .\` (oder gezielt \`git add datei.txt\`), dann \`git commit\`
+
+**❗ Commit-Nachricht zu knapp:** \`git commit -m "update"\` sagt nichts.
+→ Besser: \`git commit -m "Add login functionality"\`

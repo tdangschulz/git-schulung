@@ -59,3 +59,17 @@ Start: `config.txt` mit "color = blue".
 - Wann ist `-Xours` sinnvoll? (z.B. bei reinen Formatierungs-Änderungen)
 - Wann muss man manuell lösen? (bei inhaltlichen Konflikten)
 - Warum ist der Konflikt entstanden? → Beide haben die SELBE Zeile geändert.
+
+## ⚠️ Typische Praxisprobleme
+
+**❗ Panik bei Konflikt:** \`git merge --abort\` ist verlockend, aber unnötig.
+→ Konflikt lösen, \`git add datei.txt\`, \`git commit\` — fertig.
+
+**❗ Falsche Lösung:** Beide Versionen nebeneinander stehen lassen zerstört Syntax.
+→ Lieber genau überlegen was richtig ist, statt beide Versionen zu mischen.
+
+**❗ Konflikt nicht committed:** \`git add\` nach dem Fix vergessen.
+→ \`git status  zeigt im Merge "both modified". Erst adden, dann commiten.
+
+**❗ Kein diff3:** Nur \`<<<< |||| >>>\` — Vorfahr fehlt.
+→ \`git config --global merge.conflictstyle diff3\` — sofort machen!

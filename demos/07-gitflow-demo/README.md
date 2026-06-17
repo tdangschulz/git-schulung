@@ -66,3 +66,14 @@ Start: `version.txt` mit "v1.0".
 9. **Finale History**
    `git log --oneline --graph --all --decorate`
    → Erkennst du den Gitflow-Zyklus?
+
+## ⚠️ Typische Praxisprobleme
+
+**❗ Hotfix in den falschen Branch gemergt:** Statt main in develop gemergt.
+→ \`git revert\` des Merge-Commits oder \`git reset --hard ORIG_HEAD\` (wenn niemand gezogen hat).
+
+**❗ Develop nicht aktuell:** Nach Release ist develop hinter main.
+→ \`git switch develop && git merge main\` — main in develop mergen (nie umgekehrt).
+
+**❗ Tag vergessen nach Release:** Später findet man die Version nicht mehr.
+→ Direkt nach Release-Merge: \`git tag v1.1.0 && git push origin --tags\`

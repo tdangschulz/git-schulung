@@ -60,3 +60,14 @@ Der Ordner ist leer — der Trainer erstellt die Dateien live.
    `git reset --hard HEAD~1`
    `git merge feature/v2`
    → Rerere wendet die gemerkte Lösung automatisch an! Kein manuelles Eingreifen nötig.
+
+## ⚠️ Typische Praxisprobleme
+
+**❗ Rerere vergessen zu aktivieren:** Nächstes Mal kommt der gleiche Konflikt wieder.
+→ \`git config --global rerere.enabled true\` — einmal aktivieren, nie wieder manuell lösen.
+
+**❗ Falsch gemerkte Lösung:** Rerere hat was falsches gespeichert.
+→ \`git rerere clear\` löscht den Cache. \`git rerere forget datei.txt\` für einzelne Dateien.
+
+**❗ Rerere-Cache gelöscht:** \`rm -rf .git/rr-cache\` — kein Drama.
+→ Git merkt sich die Lösung einfach neu beim nächsten Konflikt.
