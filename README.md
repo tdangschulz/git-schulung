@@ -30,7 +30,7 @@ git diff            git restore --staged
 
 | Befehl | Erklärung |
 |---|---|
-| `git status` | **Zeigt was los ist.** Rote Dateien = ungetrackt/ungeändert. Staged (grün) = bereit zum Commit. Erster Befehl den man immer eingibt! |
+| `git status` | **Zeigt was los ist.** Untracked + Unstaged. Staged (grün) = bereit zum Commit. Erster Befehl den man immer eingibt! |
 | `git diff` | **Zeigt ungestagte Änderungen** zeilenweise. Was ist anders, aber noch nicht in der Staging Area? |
 | `git diff --staged` | **Zeigt gestagte Änderungen** (was wird mit dem nächsten Commit kommen). |
 
@@ -39,16 +39,16 @@ git diff            git restore --staged
 > ```
 > Working Directory ── git add ──→ Index (Staging) ── git commit ──→ HEAD (letzter Commit)
 >        │                              │
->        ├── git diff ──────────────────┤  (ungeaddet, noch draußen)
+>        ├── git diff ──────────────────┤  ( unstaged (noch im Working Directory))
 >        │                              │
 >        │                              ├── git diff --staged ─────────┤
->        │                              │  (im Korb, wartet auf Commit)
+>        │                              │  (im Staging Area, wartet auf Commit)
 >        │                              │
 >        └──────────────────────────────┴── git diff HEAD ────────────┤
 >                                           (alles seit dem letzten Commit)
 > ```
 >
-> **Eselsbrücke:** `git diff` = **draußen** (ungeaddet), `git diff --staged` = **drinnen** (bereit für Commit).
+> **Eselsbrücke:** `git diff` = unstaged, `git diff --staged` = staged.
 >
 > Funktioniert auch mit Dateinamen: `git diff --staged datei.txt` zeigt nur was von der einen Datei staged ist.
 | `git add <datei>` | **Nimmt Datei in die Staging Area** (Staging). Erst danach "weiß" Git von der Datei. |
