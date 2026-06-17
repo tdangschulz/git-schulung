@@ -19,7 +19,7 @@ Kompakte Befehlsreferenz für den Git-Workshop — mit Erklärungen zum Vorlesen
 ### Der Git-Workflow (immer gleich!)
 
 ```
-Arbeitsverzeichnis  →  git add  →  Staging (grüne Zone)  →  git commit  →  Repository
+Arbeitsverzeichnis  →  git add  →  Staging (Staging Area)  →  git commit  →  Repository
      (Dateien bearbeiten)                                    (fester Snapshot)
 
 git status          git add           git commit -m "..."
@@ -30,8 +30,8 @@ git diff            git restore --staged
 
 | Befehl | Erklärung |
 |---|---|
-| `git status` | **Zeigt was los ist.** Rote Dateien = ungetrackt/ungeändert. Grüne Dateien = bereit zum Commit. Erster Befehl den man immer eingibt! |
-| `git diff` | **Zeigt ungestagte Änderungen** zeilenweise. Was ist anders, aber noch nicht in der grünen Zone? |
+| `git status` | **Zeigt was los ist.** Rote Dateien = ungetrackt/ungeändert. Staged (grün) = bereit zum Commit. Erster Befehl den man immer eingibt! |
+| `git diff` | **Zeigt ungestagte Änderungen** zeilenweise. Was ist anders, aber noch nicht in der Staging Area? |
 | `git diff --staged` | **Zeigt gestagte Änderungen** (was wird mit dem nächsten Commit kommen). |
 
 > **💡 Detailliert:** `git diff --staged` zeigt genau was im Staging-Bereich (Index) liegt und beim nächsten Commit rausgeht.
@@ -51,13 +51,13 @@ git diff            git restore --staged
 > **Eselsbrücke:** `git diff` = **draußen** (ungeaddet), `git diff --staged` = **drinnen** (bereit für Commit).
 >
 > Funktioniert auch mit Dateinamen: `git diff --staged datei.txt` zeigt nur was von der einen Datei staged ist.
-| `git add <datei>` | **Nimmt Datei in die grüne Zone** (Staging). Erst danach "weiß" Git von der Datei. |
-| `git add .` | **Nimmt ALLE Dateien** im aktuellen Ordner in die grüne Zone. Praktisch, aber Vorsicht: auch ungewollte Dateien! |
+| `git add <datei>` | **Nimmt Datei in die Staging Area** (Staging). Erst danach "weiß" Git von der Datei. |
+| `git add .` | **Nimmt ALLE Dateien** im aktuellen Ordner in die Staging Area. Praktisch, aber Vorsicht: auch ungewollte Dateien! |
 | `git add -p` | **Interaktives Staging.** Zeigt jede Änderung einzeln. `y` = ja, `n` = nein, `s` = splitten. Perfekt für atomare Commits! |
 | `git commit -m "..."` | **Macht einen festen Snapshot.** Der Text in `-m` beschreibt WAS geändert wurde. |
 | `git commit --amend` | **Erweitert den letzten Commit** (anstatt einen neuen zu machen). Achtung: überschreibt History — nie bei gepushten Commits! |
 | `git restore <datei>` | **Macht ungestagte Änderungen rückgängig** — Datei ist wieder wie im letzten Commit. |
-| `git restore --staged <datei>` | **Nimmt Datei aus der grünen Zone** (unstage), aber Änderungen bleiben erhalten. |
+| `git restore --staged <datei>` | **Nimmt Datei aus der Staging Area** (unstage), aber Änderungen bleiben erhalten. |
 
 ### Log & History
 
