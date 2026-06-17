@@ -1,3 +1,16 @@
+## Schnellstart
+
+```bash
+# Auspacken
+cd /tmp
+tar xzf pfad/zu/start.tar.gz
+cd start
+
+# Status: app.py + config.py, auf main, alles committed
+# Erster Befehl: Feature hinter Feature-Flag hinzufügen
+# app.py erweitern und Neues Feature ausprobieren
+```
+
 # Trunk-Based Development
 
 Demo für Trunk-basierte Entwicklung mit Feature-Flags statt langen Branches.

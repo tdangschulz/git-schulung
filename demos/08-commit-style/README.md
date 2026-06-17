@@ -1,3 +1,16 @@
+## Schnellstart
+
+```bash
+# Auspacken
+cd /tmp
+tar xzf pfad/zu/start.tar.gz
+cd start
+
+# Status: Leeres Repo (nur initialer Empty-Commit "Start")
+# Erster Befehl: Status prüfen
+git status
+```
+
 # Commit Style
 
 Demo für gute Commit-Konventionen und sinnvolle Commit-Größen.

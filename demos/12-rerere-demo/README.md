@@ -1,3 +1,18 @@
+## Schnellstart
+
+```bash
+# Auspacken
+cd /tmp
+tar xzf pfad/zu/start.tar.gz
+cd start
+
+# Status: version.txt auf main = "version = 1.5", feature/v2 = "version = 2.0"
+# Merge führt zum Konflikt — perfekt zum Üben von rerere
+# Erster Befehl: rerere aktivieren und merge
+git config rerere.enabled true
+git merge feature/v2
+```
+
 # ReReRe (Reuse Recorded Resolution)
 
 Git kann sich gemerkte Konfliktlösungen automatisch wieder anwenden.

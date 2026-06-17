@@ -1,3 +1,18 @@
+## Schnellstart
+
+```bash
+# Auspacken
+cd /tmp
+tar xzf pfad/zu/start.tar.gz
+cd start
+
+# Status: file.txt mit "start" auf main
+# Zwei Feature-Branches existieren bereits: feature/moin (gruess.txt) und feature/hello (greetings.txt)
+# Beide sind UNGEMERGED — bereit zum Üben verschiedener Merge-Strategien!
+# Erster Befehl: Merge-Strategie testen
+git merge --no-ff feature/moin -m "Merge feature/moin"
+```
+
 # Merge-Strategien
 
 Demo verschiedener Merge-Strategien: --no-ff, --ff-only, --squash.

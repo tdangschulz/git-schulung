@@ -1,3 +1,16 @@
+## Schnellstart
+
+```bash
+# Auspacken
+cd /tmp
+tar xzf pfad/zu/start.tar.gz
+cd start
+
+# Status: datei.txt mit "Zeile 1", auf main, alles committed
+# Erster Befehl: Feature-Branch anlegen
+git switch -c feature/neu
+```
+
 # Rebase Demo
 
 Start: `datei.txt` enthält "Zeile 1".

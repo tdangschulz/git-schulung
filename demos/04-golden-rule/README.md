@@ -1,3 +1,17 @@
+## Schnellstart
+
+```bash
+# Auspacken
+cd /tmp
+tar xzf pfad/zu/start.tar.gz
+cd start
+
+# Status: file.txt mit "Initial", auf main, Remote zeigt auf ../central.git
+# central.git existiert im selben Ordner wie start/
+# Erster Befehl: Zwei Klone erstellen (simuliert zwei Entwickler)
+git clone . /tmp/dev-a && git clone . /tmp/dev-b
+```
+
 # Golden Rule of Rebasing
 
 Demo zur Goldenen Regel: "Rebase niemals öffentliche Commits, die andere bereits haben."

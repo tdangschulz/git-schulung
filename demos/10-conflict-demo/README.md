@@ -1,3 +1,18 @@
+## Schnellstart
+
+```bash
+# Auspacken
+cd /tmp
+tar xzf pfad/zu/start.tar.gz
+cd start
+
+# Status: config.txt auf main = "color = green", feature/change-color = "color = red"
+# Branches sind divergiert — Merge führt sofort zum Konflikt!
+# Erster Befehl: Merge provozieren
+git merge feature/change-color
+# → cat config.txt zeigt die Konflikt-Markierungen
+```
+
 # Merge-Konflikte
 
 Demo zur Entstehung und Auflösung von Merge-Konflikten.

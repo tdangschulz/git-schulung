@@ -1,3 +1,18 @@
+## Schnellstart
+
+```bash
+# Auspacken
+cd /tmp
+tar xzf pfad/zu/start.tar.gz
+cd start
+
+# Status: README.md bereits committet, Arbeitsverzeichnis sauber
+# Erster Befehl: Datei bearbeiten und neuen Commit machen
+echo "Zweite Zeile" >> README.md
+git diff
+git add . && git commit -m "Zweite Zeile hinzugefügt"
+```
+
 # Hallo Git
 
 Diese Datei dient als erster Einstieg in den Git-Workflow.

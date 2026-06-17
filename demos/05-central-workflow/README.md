@@ -1,3 +1,17 @@
+## Schnellstart
+
+```bash
+# Auspacken
+cd /tmp
+tar xzf pfad/zu/start.tar.gz
+cd start
+
+# Status: datei.txt mit "Dev A's Arbeit", auf main, Remote zeigt auf ../central.git
+# central.git existiert im selben Ordner wie start/
+# Erster Befehl: Repo initialisieren und pushen
+cd /tmp/central-workflow && git push origin main
+```
+
 # Central Workflow
 
 Demo des zentralen Workflows mit einem gemeinsamen main-Branch.

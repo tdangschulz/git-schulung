@@ -1,3 +1,17 @@
+## Schnellstart
+
+```bash
+# Auspacken
+cd /tmp
+tar xzf pfad/zu/start.tar.gz
+cd start
+
+# Status: README.md mit "main", auf main, Remote zeigt auf ../central.git
+# central.git existiert im selben Ordner wie start/
+# Erster Befehl: Feature-Branch anlegen
+git switch -c feature/dark-mode
+```
+
 # Feature Branch Workflow
 
 Demo des Feature-Branch-Workflows mit Pull Requests.

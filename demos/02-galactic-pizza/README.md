@@ -1,3 +1,17 @@
+## Schnellstart
+
+```bash
+# Auspacken
+cd /tmp
+tar xzf pfad/zu/start.tar.gz
+cd start
+
+# Status: Repo mit index.html + style.css, auf main, kein Branch außer main
+# Alles bereits committed — Arbeitsverzeichnis sauber
+# Erster Befehl: Branch für neues Feature anlegen
+git switch -c feature/menu
+```
+
 # Galaktische Pizza
 
 Ein HTML/CSS-Projekt für das GitHub-Schulungstraining.

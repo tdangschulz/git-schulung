@@ -1,3 +1,16 @@
+## Schnellstart
+
+```bash
+# Auspacken
+cd /tmp
+tar xzf pfad/zu/start.tar.gz
+cd start
+
+# Status: version.txt mit "v1.0", Tag v1.0.0 existiert, develop-Branch existiert und ist ausgecheckt
+# Erster Befehl: Feature-Branch von develop aus anlegen
+git switch -c feature/login
+```
+
 # GitFlow Demo
 
 Demo des GitFlow-Branching-Modells (feature, develop, release, hotfix).

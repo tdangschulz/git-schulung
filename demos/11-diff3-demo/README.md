@@ -1,3 +1,20 @@
+## Schnellstart
+
+```bash
+# Auspacken
+cd /tmp
+tar xzf pfad/zu/start.tar.gz
+cd start
+
+# Status: theme.txt auf main = sepia, feature/dark = dark
+# Merge führt sofort zum Konflikt in theme.txt
+# Erster Befehl: Merge mit Konflikt
+git merge feature/dark || true
+cat theme.txt
+# Dann diff3-Ansicht aktivieren:
+git checkout --conflict=diff3 theme.txt
+```
+
 # diff3-Konfliktstil
 
 Mit diff3 sieht man beim Konflikt auch den gemeinsamen Vorfahren — das macht die Lösung leichter.
