@@ -51,6 +51,46 @@ git diff            git restore --staged
 | `git log --oneline --graph --all` | **Alle Branches** in der Grafik, nicht nur den aktuellen. |
 | `git reflog` | **Rettungsanker!** Zeigt ALLE HEAD-Wechsel der letzten 90 Tage. Auch verlorene Commits findet man hier. |
 
+
+## 🔧 Git Config — Einrichtung
+
+Die erste Konfiguration nach der Git-Installation:
+
+```bash
+# Wer bist du? (wird in jeden Commit übernommen)
+git config --global user.name "Pascal Reichert"
+git config --global user.email "pascal@example.com"
+
+# Welcher Editor? (für merge-commits, rebase -i, etc.)
+git config --global core.editor "code --wait"     # VS Code
+git config --global core.editor "nano"            # Nano
+git config --global core.editor "vim"             # Vim
+
+# Standard-Branch-Name auf main (statt master)
+git config --global init.defaultBranch main
+```
+
+**Empfohlen für den Workshop:**
+
+```bash
+git config --global pull.rebase true          # pull = pull --rebase (keine Merge-Commits bei pulls)
+git config --global merge.conflictstyle diff3 # Konflikte mit Vorfahren-Ansicht
+git config --global rerere.enabled true       # Wiederkehrende Konflikte automatisch lösen
+```
+
+| Befehl | Erklärung |
+|---|---|
+| `git config --global user.name "..."` | **Setzt den Commit-Namen** (global). Ohne den geht kein Commit! |
+| `git config --global user.email "..."` | **Setzt die Commit-Email.** Taucht in der History auf — nicht spammen! |
+| `git config --global core.editor "..."` | **Standard-Editor** für Commit-Nachrichten, rebase -i, merge. |
+| `git config --global init.defaultBranch main` | **`git init` erstellt main statt master.** Seit 2020 Standard. |
+| `git config --list` | **Zeigt ALLE aktiven Configs** (global + lokal). |
+| `git config --global --list` | **Nur globale Config.** |
+| `git config --local --list` | **Nur lokale Config** (pro Repo in `.git/config`). |
+| `git config --global alias.lg "log --oneline --graph --all"` | **Erstellt einen Alias.** Danach: `git lg` statt dem langen Befehl. |
+
+> **Config-Hierarchie:** Lokal (`.git/config`) überschreibt Global (`~/.gitconfig`) überschreibt System (`/etc/gitconfig`).
+
 ---
 
 ## 🌿 Branches
@@ -208,11 +248,7 @@ git merge feature/neu   # Fast-Forward (weil feature schon hinter main hängt)
 | `git bisect start` | **Binäre Fehlersuche.** Markiert Commits als "good/bad" bis der Schuldige gefunden ist. |
 | `git bisect good/bad` | **Markiert aktuellen Commit.** Git springt automatisch in die Mitte des verdächtigen Bereichs. |
 | `git bisect reset` | **Beendet bisect-Modus.** |
-| `git config rerere.enabled true` | **Reuse Recorded Resolution.** Git merkt sich, wie du Konflikte gelöst hast und wendet die Lösung automatisch wieder an. |
-| `git config --global pull.rebase true` | **Immer `git pull --rebase` statt `git pull`.** Vermeidet unnötige Merge-Commits. |
-| `git config --global merge.conflictstyle diff3` | **diff3-Konfliktstil aktivieren.** Zeigt den gemeinsamen Vorfahren — viel leichter zu lösen! |
-| `git config --global user.name "..."` | **Setzt den Commit-Namen** (global für alle Repos). |
-| `git config --global user.email "..."` | **Setzt die Commit-Email.** |
+| `git config rerere.enabled true` | **Reuse Recorded Resolution.** Git merkt sich Konfliktlösungen und wendet sie automatisch wieder an. |
 
 ## 📝 Gute Commit-Nachrichten
 
