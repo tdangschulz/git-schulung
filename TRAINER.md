@@ -1,6 +1,6 @@
 # Git Aufbau — Trainerleitfaden mit Live-Demos 🚀
 
-**2-tägiger Workshop** | Trainer: Pascal Reichert (BREDEX GmbH) | Stand: Juni 2026
+**2-tägiger Workshop** | Trainer: (eigener Name) | Stand: Juni 2026
 
 Dieser Leitfaden enthält **vollständige, demonstrierbare Beispiele** für jede Session. Jeder Befehl ist mit
 einer verständlichen Erklärung versehen — zum Vorlesen, Erklären oder als Merkhilfe.
