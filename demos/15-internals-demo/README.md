@@ -1,172 +1,309 @@
 # Demo 15 — Git Internals: Was passiert im Hintergrund?
 
-Zeigt live was Git tatsächlich macht — `.git`-Ordner, Objekte, Branches als Pointer, Three Trees, Reflog.
+Zeigt live was Git tatsächlich macht — `.git`-Ordner, Objekte, Branches als Pointer, Three Trees, Reflog. Perfekt um das tiefe Verständnis zu vermitteln was Git wirklich ist: ein Content-adressable Storage mit Snapshots.
 
 ## Befehlsablauf
 
-### 1. Der `.git` Ordner — das Herz
+### 1. Der `.git` Ordner — das Herz von Git
+
+Jedes Git-Repository hat einen versteckten `.git` Ordner. Hier liegt ALLES was Git über dein Projekt weiß. Kein externes System, keine Cloud — ein Ordner. Kopierst du das Repo, hast du alles dabei.
 
 ```bash
 cd start
 
-# Vollständige Baumstruktur
+# Vollständige Baumstruktur — das ist Git in echt
 find .git -type f | head -20
+# → .git/HEAD
+# → .git/config
+# → .git/description
+# → .git/objects/1a/2b3c4d...
+# → .git/refs/heads/main
+# → .git/logs/HEAD
 
-# Was ist HEAD?
+# Was ist HEAD? Ein Zeiger auf den aktuellen Branch
 cat .git/HEAD
 # → ref: refs/heads/main
+# HEAD zeigt nicht direkt auf einen Commit,
+# sondern auf den Branch-Namen. Der Branch zeigt auf den Commit.
+# Git fragt also: HEAD → "main" → Hash
 
 # Ein Branch ist nur eine Datei mit einem Hash
 cat .git/refs/heads/main
+# → 73de0724...
+# Das wars. 40 Hex-Zeichen. Ein Branch kostet dich 41 Byte.
+# Jeder Branch, jeder Tag — alles nur Dateien mit Hashes.
 ```
 
-**Erklärung:** `.git/HEAD` zeigt auf den aktuellen Branch. Der Branch selbst ist nur eine Datei mit einem 40-stelligen SHA-1 Hash. Mehr nicht.
+**Erklärung warum das wichtig ist:** Weil Branches so billig sind, macht Git keine Aufhebens darum. Ein neuer Branch kostet nichts. `git branch feature/xyz` schreibt 41 Byte in eine Datei. Fertig. Deshalb ist Git so anders als SVN oder CVS — dort war ein Branch ein teurer Kopiervorgang vom gesamten Repository. In Git: 41 Byte.
 
 ### 2. Objekte erkunden — Blobs, Trees, Commits
 
+Git kennt genau 4 Objekttypen. Alles andere (Branches, Tags, Stash) sind Zeiger auf diese Objekte. Die Objekte liegen im `.git/objects/` Ordner, albtraumhaft organisiert: erster Hex-Zeichen = Ordnername, restliche 38 = Dateiname.
+
 ```bash
-# Alle Objekte im Speicher
+# Alle Objekte im Speicher auflisten
 find .git/objects -type f
+# → .git/objects/c4/9b...
+# → .git/objects/ab/cd...
+# Git packt SHA-1 Hash in 2-stelligen Ordner + 38-stelligen Dateinamen
+# Weil: zu viele Dateien in einem Ordner = langsam
 
-# Den aktuellen Commit anschauen
+# Commit anschauen — was in einem Commit wirklich drin steckt
 git cat-file -p HEAD
-# → tree hash, parent hash, author, message
+# → tree c49b...
+# → parent 0d71be5... (erstes Commit hat keinen parent)
+# → author openClaw ...
+# → committer openClaw ...
+#
+#     FEAT: Add greet function
 
-# Den Tree (Ordnerstruktur) anschauen
+# Der Tree — die Ordnerstruktur zum Zeitpunkt des Commits
 git cat-file -p HEAD^{tree}
-# → readme.md → blob hash
-# → src/ → tree hash (Unterordner!)
+# → 100644 blob abc123... readme.md
+# → 040000 tree def456... src/
 
-# Den Blob (Dateiinhalt) anschauen — z.B. readme.md
+# src/ ist ein Unterordner → zeigt auf einen weiteren Tree
+git cat-file -p 'HEAD^{tree}:src/'
+# Git speichert Ordner ebenfalls als Tree-Objekt!
+
+# Ein Blob — der Inhalt einer Datei
 git cat-file -p HEAD:readme.md
+# → "Hallo Git Welt"
+# Kein Dateiname! 
+# Der Dateiname steht im Tree, der Inhalt im Blob.
+# Deshalb: Datei umbenennen = neuer Tree, gleicher Blob → kein Speicherverbrauch!
 
-# Typ des Objekts herausfinden
-git cat-file -t HEAD      # → commit
-git cat-file -t HEAD^{tree}  # → tree
-git cat-file -t HEAD:readme.md  # → blob
+# Typ des Objekts bestimmen
+git cat-file -t HEAD              # → commit
+git cat-file -t 'HEAD^{tree}'     # → tree
+git cat-file -t HEAD:readme.md    # → blob
 ```
 
-**Erklärung:** Git kennt nur 4 Objekttypen. `git cat-file -p` zeigt den Inhalt, `-t` den Typ.
+**Erklärung des Objektmodells:** Stell dir vor du baust einen LEGO-Turm. Der **Commit** ist ein Foto des Turms zu einem bestimmten Zeitpunkt. Der **Tree** ist die Bauanleitung: "Hier steht ein roter Stein, hier ein blauer..." Der **Blob** ist der einzelne Stein selbst — sein Wert, nicht sein Platz. Wenn du den Turm veränderst und ein Stein bleibt gleich, ist es immer noch DERSELBE Stein (gleicher Hash). Darum ist Git so effizient: Schnappschüsse, aber ohne Speicherverschwendung.
 
 ### 3. SHA-1 — Wie der Hash entsteht
 
+Jedes Objekt hat eine eindeutige ID, die aus seinem Inhalt berechnet wird. Dieser Hash ist 100% deterministisch: Gleicher Inhalt = gleicher Hash, auf jedem Rechner, in jeder Zeitzone, heute wie in 10 Jahren.
+
 ```bash
-# Gleicher Inhalt = gleicher Hash
+# Der einfachste Fall: Ein Blob aus dem Nichts
 echo "Hallo Git" | git hash-object --stdin
+# → c49b... (ein SHA-1 Hash)
+# Die Pipe schickt "Hallo Git\n" an hash-object
 
-# Anderer Inhalt = anderer Hash
+# Kleine Änderung → völlig anderer Hash
 echo "Hallo Git Welt" | git hash-object --stdin
+# → 123abc... (völlig anderer Hash, obwohl nur 4 Zeichen mehr!)
 
-# Der Hash ist: sha1("blob <groesse>\0<inhalt>")
-echo -n "Hallo Git" | wc -c       # → 10
-printf "blob 10\0Hallo Git" | sha1sum
+# So entsteht der Hash (Git-Interna)
+echo -n "Hallo Git" | wc -c          # → 9 (ohne newline)
+printf "blob 9\0Hallo Git" | sha1sum
+# → c49b... (IDENTISCH mit git hash-object!)
+# Git schreibt: "blob <Laenge>\0<Inhalt>" und hasht das.
 
-# Ist identisch! (mit git hash-object)
-git hash-object --stdin < <(echo -n "Hallo Git")
+# Darum: Datei umbenennen → gleicher Hash
+echo "readme" | git hash-object --stdin
+echo "readme2" | git hash-object --stdin
+# Wenn die Datei gleichen Inhalt hat: GLEICHER Hash!
+# Der Dateiname steckt im Tree, nicht im Blob.
 ```
 
-**Erklärung:** Der Hash ist 100% deterministisch. Gleicher Inhalt = gleicher Hash, auf jedem Rechner weltweit.
+**Erklärung warum kryptografische Hashes:** SHA-1 ist ein kryptografischer Hash. Git vertraut darauf, dass zwei unterschiedliche Inhalte NIE denselben Hash erzeugen. Das bedeutet: Wenn zwei Objekte denselben Hash haben, sind sie garantiert identisch. Darauf basiert Gits Integrität. Und ja — SHA-1 ist mathematisch geknackt, aber für Git reichts (Git migriert gerade zu SHA-256).
 
 ### 4. Snapshots, nicht Diffs
 
+Das ist das größte Missverständnis über Git. Jeder Commit ist kein "Diff zum vorherigen", sondern ein vollständiger Snapshot ALLER Dateien. Git lügt dich nur beim `git log -p` an (es zeigt dir Diffs an, weil das für Menschen lesbarer ist).
+
 ```bash
 # Jeder Commit hat einen KOMPLETTEN Tree
-# -> Vergleiche Tree-Hashes verschiedener Commits:
 git cat-file -p HEAD^{tree}
-git cat-file -p HEAD~1^{tree}
+git cat-file -p HEAD~1^{tree}   # vorheriger Commit
+# Beide zeigen EINE komplette Ordnerstruktur
+# Nicht: "add these 3 lines, remove 2 lines" — sondern ALLE Dateien
 
-# Unveränderte Dateien teilen sich denselben Blob-Hash!
-# -> src/version.py wurde nie geändert
+# Beweis: Unveränderte Dateien teilen sich denselben Blob-Hash
+# src/version.py wurde nie verändert in der Demo
 git rev-parse HEAD:src/version.py
+# → 37b1...
+
 git rev-parse HEAD~1:src/version.py
-# → Identisch!
+# → 37b1... IDENTISCH!
+
+# Beide Commits zeigen auf DENSELBEN Blob!
+# Git speichert die unveränderten Dateien nicht doppelt.
+# Jeder Commit IST ein vollständiger Snapshot,
+# ABER nur geänderte Dateien verbrauchen neuen Speicherplatz.
 ```
 
-**Erklärung:** Git speichert Snapshots, keine Diffs. Unveränderte Dateien teilen denselben Hash → werden nur einmal gespeichert.
+**Warum das wichtig ist:** Wenn du `git log --all --oneline` siehst und 200 Commits siehst, dann sind das 200 vollständige Snapshots deines Projekts. Git kann jeden einzelnen Commit auspacken, ohne die vorherigen zu berechnen (im Gegensatz zu SVN/Darcs/others). Das macht `git switch`, `git checkout`, `git bisect` blitzschnell. Und die Speichereffizienz kommt durch geteilte Blobs, nicht durch Diffs.
 
 ### 5. Die Drei Bäume (Three Trees)
 
+Git lebt in drei Zuständen. Wenn man das versteht, wird `git add`, `git commit`, `git restore` plötzlich logisch. Die drei Bäume sind: **HEAD** (letzter Commit), **Index** (Staging), **Working Directory** (deine sichtbaren Dateien).
+
 ```bash
-# AUSGANGSLAGE: Alles sauber
+# AUSGANGSLAGE: Alle drei Bäume identisch
 git status
+# → nothing to commit, working tree clean
 
-# 1. HEAD = letzter Commit
+# HEAD = der aktuelle Commit (im .git/objects)
 git rev-parse HEAD
+# → 73de072...
 
-# 2. Index = aktuelles Staging  (identisch mit HEAD)
-git diff --cached   # → nichts (HEAD == Index)
+# Index = Staging Area (binäre Datei .git/index)
+# Vergleiche HEAD mit Index:
+git diff --cached   # → nichts! HEAD == Index
 
-# 3. Working Directory = deine Dateien (identisch mit Index)
-git diff            # → nichts (Index == Working Dir)
+# Working Directory = deine sichtbaren Dateien
+# Vergleiche Index mit Working Dir:
+git diff            # → nichts! Index == Working Dir
 
-# ÄNDERUNG: Datei bearbeiten
+# Also: HEAD == Index == Working Dir → "clean"
+# ---------- Jetzt ändern wir was ----------
+
+# Datei bearbeiten (änder nur Working Directory)
 echo "Neuer Inhalt" > readme.md
 
 # Working Dir ≠ Index!
-git diff            # → zeigt Änderung
+git diff
+# → diff --git a/readme.md b/readme.md
+# → -Hallo Git Welt
+# → +Neuer Inhalt
 
-# ADDEN: Kopiert von Working Dir → Index
+# Index ≠ HEAD noch immer (oder vielleicht schon?)
+# git diff --cached → immer noch nichts (noch nicht geaddet!)
+
+# ADD: Kopiert von Working Dir in den Index
 git add readme.md
-git diff            # → nichts (Working Dir == Index)
-git diff --cached   # → zeigt Änderung (HEAD ≠ Index)
 
-# COMMIT: Friert den Index als Tree ein
+# Jetzt: Index == Working Dir (beide haben "Neuer Inhalt")
+git diff            # → nichts mehr!
+
+# Aber: HEAD ≠ Index (im HEAD steht noch "Hallo Git Welt")
+git diff --cached   # → zeigt die Änderung! Wird gleich committed.
+
+# COMMIT: Friert den Index als neuen Tree ein
 git commit -m "FEAT: Neuer Inhalt"
-# → Neuer Commit, neuer Tree
-# → Alte Objekte existieren weiter!
+# → Git nimmt den aktuellen Index, erstellt einen Tree,
+#   verpackt ihn in einen neuen Commit, und schiebt
+#   den Branch-Zeiger auf den neuen Commit.
+
+# Danach wieder: HEAD == Index == Working Dir → clean
 ```
 
+**Erklärung zum Mitnehmen:** Der ganze Git-Alltag dreht sich darum, Daten zwischen diesen drei Bäumen zu verschieben. `git add` = Working → Index. `git commit` = Index → HEAD. `git restore` = HEAD → Working (rückwärts). Wenn einer dieser Schritte unklar ist, denk an die drei Bäume.
+
 ### 6. Branches sind nur Post-it-Zettel
+
+In den meisten Tools ist ein Branch "ein separater Entwicklungszweig". Technisch ist das bullshit. Ein Branch ist ein **beweglicher Zeiger auf einen Commit**. Nichts sonst. Kein Kopieren, kein Fork, kein Speicherverbrauch.
 
 ```bash
 # Aktuelle Position
 cat .git/refs/heads/main
+# → 73de072...
+# Und was ist HEAD?
 git rev-parse HEAD
-# → Identisch! Der Branch IST der Pointer.
+# → 73de072... IDENTISCH!
+# Weil: HEAD → Branch → Commit
 
-# Neuen Branch anlegen = neue Datei
+# Neuen Branch = neue Datei mit gleichem Inhalt
 git branch feature/neu
 cat .git/refs/heads/feature/neu
-# → Gleicher Hash wie main
+# → 73de072... Gleicher Hash!
 
-# Löschen = Datei löschen (Commits bleiben!)
+# Nach einem Commit auf dem neuen Branch:
+git switch feature/neu
+echo "Feature" > feature.txt
+git add . && git commit -m "FEAT: New feature"
+cat .git/refs/heads/feature/neu
+# → NEUER Hash! Der Branch ist weitergewandert.
+# main zeigt noch auf den alten Commit.
+
+# Löschen = Datei löschen. Die Commits bleiben!
 git branch -D feature/neu
-cat .git/refs/heads/feature/neu  # → weg
-git log --oneline                # → Commits noch da!
+cat .git/refs/heads/feature/neu  # → Datei existiert nicht mehr
+ls .git/refs/heads/              # → nur noch main
+
+# Aber die Commits sind noch da:
+git log --oneline all
+# Oder direkt:
+git log --all --oneline
+# → ALLE Commits sichtbar, obwohl der Branch-Zeiger weg ist.
 ```
 
-**Erklärung:** Ein Branch ist wirklich nur eine Datei mit einem Hash. Löschen = Zeiger weg. Der Garbage Collector räumt erst nach 90 Tagen auf.
+**Warum das wichtig ist:** Weil Branches billige Zeiger sind, kann Git sich endlos viele Branches leisten. Jeder Branch ist nur `echo "hash" > datei`. Darum ist Git so branch-happy. Und darum kann man einen "gelöschten" Branch so leicht wiederherstellen: Der Garbage Collector räumt verwaiste Commits erst nach 90 Tagen auf (bzw. wenn der Reflog-Eintrag abläuft).
 
 ### 7. Der Reflog — dein Rettungsnetz
+
+Der Reflog (Reference Log) zeichnet ALLE Bewegungen von HEAD auf. Nicht nur Commits, sondern auch Switches, Resets, Rebases, Merges. 90 Tage lang. Das ist dein Sicherheitsnetz gegen "ich hab grad alles kaputt gemacht".
 
 ```bash
 # Alle HEAD-Bewegungen der letzten 90 Tage
 git reflog
+# → 73de072 HEAD@{0}: checkout: moving from main to feature/hallo-name
+# → 73de072 HEAD@{1}: checkout: moving from feature/hallo-name to main
+# → 73de072 HEAD@{2}: checkout: moving from main to feature/hallo-name
+# → 0d71be5 HEAD@{3}: commit: FEAT: Initial project
+# → ...
 
-# Auch gelöschte Branches sind noch da!
-# Einen "weggeworfenen" Commit wiederherstellen:
-git reflog
-# 1a2b3c4 HEAD@{2}: commit: FEAT: Add greet function
-git branch wiederhergestellt 1a2b3c4
+# JEDE Aktion wird geloggt — auch abgebrochene Rebases
+git rebase --abort  # steht auch im Reflog!
+
+# Einen vermeintlich verlorenen Commit wiederherstellen
+# Z.B. nach: git reset --hard HEAD~2 (weil man dachte "der letzte Commit war scheiße")
+# Im Reflog steht noch der alte HEAD:
+# 1a2b3c4 HEAD@{5}: commit: FEAT: Add greet function
+git branch gerettet 1a2b3c4
+# → Zack, Branch zeigt auf den alten Commit. Gerettet.
+
+# Reflog hat PRO REPO einen separaten Log-Ordner:
+cat .git/logs/HEAD
+# → Das ist die Rohdaten-Quelle für git reflog
+# Spalten: alter_Hash neuer_Hash Autor_Datumsstempel Aktion
 ```
 
-**Erklärung:** Der Reflog zeichnet ALLE HEAD-Änderungen auf. Erst wenn der Reflog-Eintrag nach 90 Tagen abläuft, kann Git wirklich löschen.
+**Erklärung:** Der Reflog ist dein "Das hätte ich fast verloren"-Protokoll. In 10 Jahren Git-Nutzung hab ich ihn vielleicht 3 Mal gebraucht — aber diese 3 Male haben mich vor stundenlanger Arbeit bewahrt. Fun Fact: `git reflog` ist nicht der richtige Befehl — es gibt nur `git log -g` oder `git reflog show`. Aber weil alle `git reflog` sagen, hat Git daraus einen offiziellen Alias gemacht.
 
-### 8. Feature-Branch — Live verfolgen
+### 8. Feature-Branch — Live die Objekte verfolgen
+
+Jetzt kombinieren wir alles: Wechsel auf den Feature-Branch und sehen live was mit HEAD, Branch-Zeiger und den Objekten passiert.
 
 ```bash
+# Wechsel auf den Feature-Branch
 git switch feature/hallo-name
 
-# Nach dem Switch: HEAD und Branch zeigen woanders hin!
-cat .git/HEAD               # → ref: refs/heads/feature/hallo-name
-git rev-parse HEAD          # → anderer Hash
-git merge-base main feature/hallo-name  # → gemeinsamer Vorfahr
+# Was sagt HEAD jetzt?
+cat .git/HEAD
+# → ref: refs/heads/feature/hallo-name
+# HEAD zeigt nicht mehr auf main, sondern auf feature/hallo-name!
 
-# Der 3-Way-Merge-Vergleich:
-git show feature/hallo-name:src/app.py
+# Der aktuelle Commit ist ein anderer
+git rev-parse HEAD            # → 06970aa... (feature-Branch)
+git rev-parse main            # → 73de072... (bleibt wo er war)
+
+# Den gemeinsamen Vorfahren finden (Merge Base)
+git merge-base main feature/hallo-name
+# → 73de072... (letzter gemeinsamer Commit beider Branches)
+
+# 3-Way-Merge visualisieren: Wie Git Konflikte erkennt
+# Git vergleicht 3 Versionen:
+echo "=== UNSERE Version (main) ==="
 git show main:src/app.py
+
+echo "=== DEREN Version (feature) ==="
+git show feature/hallo-name:src/app.py
+
+echo "=== GEMEINSAMER VORFAHR ==="
 git show $(git merge-base main feature/hallo-name):src/app.py
+# Wenn main und feature DIESELBE Zeile anders haben als der Vorfahr → KONFLIKT
+
+# Und weil du weißt wie's funktioniert:
+# Der Merge-Base ist selbst ein Commit-Objekt mit eigenem Tree und Blobs
+git cat-file -p $(git merge-base main feature/hallo-name)
+# → tree ...  ← das ist der Vorfahr-Tree!
 ```
+
+**Erklärung:** Wenn du verstanden hast dass ein Commit ein Objekt ist, ein Branch ein Zeiger darauf, und ein Merge-Base auch nur ein Commit... dann hast du Git verstanden. Alles baut aufeinander auf. Es gibt keine Magie, keine versteckten Fallstricke. Nur Objekte, Zeiger und die drei Bäume.
 
 ## ⚠️ Typische Praxisprobleme
 
