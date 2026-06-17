@@ -1,6 +1,31 @@
 # Feature Branch Workflow
 
-Demo des Feature-Branch-Workflows.
+Demo des Feature-Branch-Workflows mit Pull Requests.
 
-Start: main enthält "main".
-Ziel: Features in eigenen Branches entwickeln, per PR mergen.
+Start: main enthält `README.md` mit "main".
+
+## Übungsaufgaben
+
+1. **Initial-Commit**
+   `git init && git add README.md && git commit -m "Initial"`
+   `git push` (nachdem du ein Remote konfiguriert hast)
+
+2. **Feature-Branch für Dark Mode**
+   `git switch -c feature/dark-mode`
+
+3. **Dark Mode CSS erstellen**
+   `echo "body.dark-mode { background: #222; color: #fff; }" > dark.css`
+   `git add . && git commit -m "Add dark mode stylesheet"`
+   `git push origin feature/dark-mode`
+
+4. **PR simulieren**
+   Wechsel zurück zu main: `git switch main`
+   Merge mit `--no-ff`: `git merge --no-ff feature/dark-mode -m "Merge PR #1: Dark Mode"`
+
+5. **Branch aufräumen**
+   `git branch -d feature/dark-mode`
+
+6. **Übung: Zweites Feature mit Konflikt**
+   `git switch -c feature/header-fix`
+   Ändere im `index.html` die Überschrift (sofern vorhanden) oder füge eine Zeile in `style.css` hinzu.
+   Merges mit `--no-ff` in main.
