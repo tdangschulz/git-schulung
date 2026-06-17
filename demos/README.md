@@ -1,19 +1,48 @@
-# Demos
+# Git-Schulung — Demos
 
-Übersicht aller Demos für das Git-Schulungstraining.
+13 interaktive Live-Demos für den Git-Workshop.
 
-| Ordner | Thema | Kurzbeschreibung |
-|---|---|---|
-| `01-recap-demo` | Git-Workflow-Recap | Einfacher Einstieg: Datei erstellen, committen |
-| `02-galactic-pizza` | Projekt-Setup | HTML/CSS-Projekt mit Grundgerüst |
-| `03-rebase-demo` | Rebase | Einfache Datei für Rebase-Übungen |
-| `04-golden-rule` | Golden Rule of Rebasing | Grundlage für Rebase-Konflikte |
-| `05-central-workflow` | Central Workflow | Zentraler Entwicklungs-Workflow |
-| `06-feature-workflow` | Feature Branch Workflow | Feature-Branch-Strategie |
-| `07-gitflow-demo` | GitFlow | GitFlow-Branching-Modell |
-| `08-commit-style` | Commit Style | Konventionen für gute Commits |
-| `09-merge-strategies` | Merge-Strategien | Verschiedene Merge-Ansätze |
-| `10-conflict-demo` | Merge-Konflikte | Konflikt-Demonstration |
-| `11-diff3-demo` | diff3-Konfliktstil | Konflikte mit diff3-Format |
-| `12-rerere-demo` | ReReRe | Wiederkehrende Konflikte automatisch lösen |
-| `13-trunk-demo` | Trunk-Based Development | Trunk-basierte Entwicklung |
+## Setup
+
+```bash
+# Nach dem Klonen: Einmalig alle Demos entpacken
+bash setup-demos.sh
+```
+
+Damit werden alle `start.tar.gz` Archive entpackt. Du bekommst pro Demo
+einen `start/` Ordner mit fertigem Git-Repo (.git inklusive).
+
+## Aufräumen
+
+```bash
+bash cleanup-demos.sh   # Entfernt alle start/ Ordner
+bash setup-demos.sh     # Frisch entpacken
+```
+
+## Demo-Übersicht
+
+| #  | Demo | Was lernst du? | Erster Befehl |
+|----|------|----------------|---------------|
+| 01 | Recap | Git-Workflow (add, commit, log) | `echo "Zweite Zeile" >> README.md` |
+| 02 | Galaktische Pizza | Branches, Fast-Forward, 3-Way Merge | `git switch -c feature/menu` |
+| 03 | Rebase | Rebase vs. Merge, History umschreiben | `git switch -c feature/neu` |
+| 04 | Golden Rule | Warum Force-Push auf shared Branches böse ist | `cd /tmp/dev-a` |
+| 05 | Central Workflow | Team-Konflikte + pull --rebase | `echo "Zeile von Dev A" >> datei.txt` |
+| 06 | Feature Workflow | Feature-Branches + --no-ff | `git switch -c feature/dark-mode` |
+| 07 | Gitflow | develop, release, hotfix Zyklus | `git switch -c feature/login` |
+| 08 | Commit Style | Gute Commit-Nachrichten + add -p | Dateien selbst erstellen |
+| 09 | Merge-Strategien | --no-ff vs --squash vs --ff-only | `git merge --no-ff feature/moin` |
+| 10 | Merge-Konflikt | Konflikt provozieren + lösen | `git merge feature/change-color` |
+| 11 | diff3 | Konflikte mit Vorfahren-Ansicht | `git merge feature/dark` |
+| 12 | Rerere | Automatische Konfliktlösung | `git merge feature/v2` |
+| 13 | Trunk | Feature-Flags statt Branches | Code in app.py einfügen |
+
+## Tipp für Live-Demos
+
+Immer zuerst einen Blick in die History werfen:
+```bash
+cd demos/10-conflict-demo/start
+git log --oneline --graph --all
+```
+
+So siehst du sofort: "Aha, hier sind die Branches schon auseinander gezweigt!"
