@@ -52,6 +52,174 @@ git diff            git restore --staged
 | `git reflog` | **Rettungsanker!** Zeigt ALLE HEAD-Wechsel der letzten 90 Tage. Auch verlorene Commits findet man hier. |
 
 
+
+
+## 🧠 Git — Was passiert im Hintergrund?
+
+### 📁 Der `.git` Ordner — das Herz von Git
+
+```bash
+.git/
+├── HEAD                # Zeigt auf aktuellen Branch: ref: refs/heads/main
+├── config              # Repo-Konfiguration (lokal)
+├── index               # Der Staging-Bereich (binär!)
+├── objects/            # Alle Daten — Commits, Bäume, Dateien
+│   ├── 1a/2b3c...      # Blob (Dateiinhalt)
+│   ├── 8f/9a0b...      # Tree (Ordnerstruktur)
+│   └── d4/e5f6...      # Commit (Snapshot + Metadaten)
+├── refs/
+│   ├── heads/main      # Zeiger auf aktuellen Commit-Hash
+│   └── tags/v1.0       # Tag (auch nur ein Zeiger)
+└── logs/               # Reflog — alle HEAD-Bewegungen
+```
+
+**Wichtig zu verstehen:** Alles in `objects/` wird über den **Inhalt** identifiziert (Content-adressable Storage). Gleicher Inhalt = gleicher Hash. Darum sind zwei identische Dateien an verschiedenen Orten nur ein einziges Objekt.
+
+### 🧩 Das Objekt-Modell
+
+Git kennt nur **4 Objekttypen**:
+
+| Objekt | Speichert | Hash basiert auf |
+|---|---|---|
+| **Blob** (Binary Large Object) | Dateiinhalt (nicht der Dateiname!) | `blob <größe>\0<dateiinhalt>` |
+| **Tree** | Ordnerstruktur: Dateiname → Blob-Hash | `tree <größe>\0<einträge>` |
+| **Commit** | Snapshot: Tree-Hash + Eltern + Autor + Nachricht | `commit <größe>\0<metadaten>` |
+| **Tag** | Annotierter Tag mit Nachricht | `tag <größe>\0<daten>` |
+
+```bash
+# Live ansehen:
+git cat-file -p HEAD          # Zeigt den aktuellen Commit
+git cat-file -p HEAD^{tree}   # Zeigt den Tree (Ordnerstruktur)
+git ls-tree HEAD              # Alternative: Tree-View
+git rev-parse HEAD            # Zeigt den Commit-Hash
+```
+
+### 🔗 Branches sind nur Zeiger
+
+```bash
+# Ein Branch ist eine Datei mit einem Hash drin:
+cat .git/refs/heads/main
+
+# Wenn du einen Branch löschst, existieren die Commits weiter!
+# Nur der Zeiger ist weg (bis der Garbage Collector läuft)
+```
+
+**Branch = Post-it-Zettel auf einen Commit.** Mehr nicht.
+
+### 🏗️ Die Drei Bäume (Three Trees)
+
+Git arbeitet immer mit drei Zuständen:
+
+```
+1. HEAD (letzter Commit)    →  .git/refs/heads/main
+       ↓ git diff --cached
+2. Index (Staging)           →  .git/index
+       ↓ git diff
+3. Working Directory         →  deine sichtbaren Dateien
+```
+
+```bash
+git diff --cached    # = Unterschied zwischen HEAD und Index
+git diff             # = Unterschied zwischen Index und Working Dir
+git status           # = Zusammenfassung BEIDER Unterschiede
+```
+
+**`git add` kopiert** von Working Directory → Index (macht keinen Hash neu, wenn Inhalt gleich).
+**`git commit` friert** den Index als Tree ein und erstellt einen Commit.
+
+### 🔐 SHA-1 — Wie der Hash entsteht
+
+```bash
+echo "Hallo Git" | git hash-object --stdin
+# → Berechnet: sha1("blob 9\0Hallo Git\n")
+# Die "9" ist die Länge von "Hallo Git\n"
+
+# Vergleich:
+echo "README.md: Hallo Git" | git hash-object --stdin
+# → ANDERER Hash (weil anderer Inhalt)
+```
+
+**Der Hash ist 100% deterministisch** — gleicher Inhalt = gleicher Hash, auf jedem Rechner, weltweit.
+
+### ⚡ Snapshots, nicht Diffs (das große Missverständnis)
+
+**Andere VCS (SVN, CVS):** Speichern Änderungen (Deltas) — um Version 5 zu bauen, brauchst du Version 1+2+3+4+5.
+
+**Git:** Speichert **vollständige Snapshots**. Jeder Commit ist eine komplette Kopie aller Dateien (als Tree).
+
+```bash
+# Ein Commit enthält:
+# - Tree-Hash (komplette Ordnerstruktur)
+# - Parent-Hash (vorherigen Commit)
+# - Autor + Datum
+# - Nachricht
+
+git cat-file -p HEAD
+# tree 8f9a0b...
+# parent d4e5f6...
+# author openClaw <dev@openclaw.ai> 1781723519 +0000
+# committer openClaw <dev@openclaw.ai> 1781723519 +0000
+#
+# Mein Commit
+```
+
+> **Aber das wäre doch riesig?** — Nein, weil unveränderte Dateien denselben Blob-Hash haben und Git sie nur einmal speichert (Content-adressable Storage).
+> **Praktisch gesehen** ist ein neuer Commit fast so günstig wie ein Symlink.
+
+### 🔄 Merge verstehen — der 3-Way-Merge
+
+```bash
+# Bei einem Merge passiert:
+# 1. Git findet den gemeinsamen Vorfahren (Merge Base)
+git merge-base main feature/branch
+
+# 2. Drei Punkte werden verglichen:
+#    - Vorfahr (base)
+#    - HEAD (unsere Seite)
+#    - MERGE_HEAD (deren Seite)
+
+# 3. Wenn beide Seiten die SELBE Zeile anders haben → Konflikt
+#    Wenn nur EINE Seite eine Zeile geändert hat → automatisch übernehmen
+```
+
+```
+         Vorfahr (base)
+         /                  /                HEAD (uns)   MERGE_HEAD (deren)
+        \            /
+         \          /
+        Merge-Commit (2 Eltern!)
+```
+
+### 🔄 Rebase verstehen — Commits neu aufsetzen
+
+```bash
+# Rebase IST cherry-pick in Serie:
+# 1. Finde alle Commits auf feature, die nicht auf main sind
+# 2. Setze feature auf main
+# 3. Wende jeden Commit einzeln per cherry-pick neu an
+#
+# Ergebnis: Neue Commits mit NEUEN Hashes (weil neuer Parent,
+# neuer Tree → neuer Hash!)
+
+# Darum die goldene Regel: Nie rebased Commits teilen!
+# Andere haben die OLDEN Hashes → Chaos
+```
+
+### 🗑️ Der Reflog — dein Rettungsnetz
+
+```bash
+git reflog
+# → Zeigt ALLE HEAD-Änderungen der letzten 90 Tage
+# Auch gelöschte Branches, zurückgesetzte Commits, etc.
+# Erst wenn der Reflog-Eintrag abläuft, kann Git den Commit
+# wirklich löschen (Garbage Collection).
+
+# Reflog-Format:
+# 1a2b3c4 HEAD@{0}: commit: Mein Commit
+# d4e5f6 HEAD@{1}: reset: moving to HEAD~1
+# 7f8g9h HEAD@{2}: checkout: moving from main to feature
+```
+
 ## 🔧 Git Config — Einrichtung
 
 Die erste Konfiguration nach der Git-Installation:
