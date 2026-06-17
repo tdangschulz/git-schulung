@@ -1,0 +1,3 @@
+background = white
+font = sans-serif
+size = 14px
