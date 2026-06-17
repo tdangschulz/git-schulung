@@ -33,6 +33,24 @@ git diff            git restore --staged
 | `git status` | **Zeigt was los ist.** Rote Dateien = ungetrackt/ungeändert. Grüne Dateien = bereit zum Commit. Erster Befehl den man immer eingibt! |
 | `git diff` | **Zeigt ungestagte Änderungen** zeilenweise. Was ist anders, aber noch nicht in der grünen Zone? |
 | `git diff --staged` | **Zeigt gestagte Änderungen** (was wird mit dem nächsten Commit kommen). |
+
+> **💡 Detailliert:** `git diff --staged` zeigt genau was im Staging-Bereich (Index) liegt und beim nächsten Commit rausgeht.
+>
+> ```
+> Working Directory ── git add ──→ Index (Staging) ── git commit ──→ HEAD (letzter Commit)
+>        │                              │
+>        ├── git diff ──────────────────┤  (ungeaddet, noch draußen)
+>        │                              │
+>        │                              ├── git diff --staged ─────────┤
+>        │                              │  (im Korb, wartet auf Commit)
+>        │                              │
+>        └──────────────────────────────┴── git diff HEAD ────────────┤
+>                                           (alles seit dem letzten Commit)
+> ```
+>
+> **Eselsbrücke:** `git diff` = **draußen** (ungeaddet), `git diff --staged` = **drinnen** (bereit für Commit).
+>
+> Funktioniert auch mit Dateinamen: `git diff --staged datei.txt` zeigt nur was von der einen Datei staged ist.
 | `git add <datei>` | **Nimmt Datei in die grüne Zone** (Staging). Erst danach "weiß" Git von der Datei. |
 | `git add .` | **Nimmt ALLE Dateien** im aktuellen Ordner in die grüne Zone. Praktisch, aber Vorsicht: auch ungewollte Dateien! |
 | `git add -p` | **Interaktives Staging.** Zeigt jede Änderung einzeln. `y` = ja, `n` = nein, `s` = splitten. Perfekt für atomare Commits! |
