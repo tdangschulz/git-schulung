@@ -20,7 +20,7 @@ Enthält:
 - `index.html` – vollständiges HTML-Grundgerüst mit Header, Navigation und Footer
 - `style.css` – CSS-Styling mit radial-gradient, goldenem h1 und Footer
 
-## Übungsaufgaben — Branches & Merges
+## Befehlsablauf — Branches & Merges
 
 ### Grundlagen
 

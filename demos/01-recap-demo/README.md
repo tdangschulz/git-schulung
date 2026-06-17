@@ -17,7 +17,7 @@ git add . && git commit -m "Zweite Zeile hinzugefügt"
 
 Diese Datei dient als erster Einstieg in den Git-Workflow.
 
-## Übungsaufgaben
+## Befehlsablauf
 
 1. **Repo initialisieren**
    `git init`

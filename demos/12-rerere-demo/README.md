@@ -20,7 +20,7 @@ Perfekt für wiederkehrende Merge-Konflikte (z.B. Changelogs, Versionsnummern).
 
 Der Ordner ist leer — der Trainer erstellt die Dateien live.
 
-## Übungsaufgaben
+## Befehlsablauf
 
 1. **Repo initialisieren**
    `git init`

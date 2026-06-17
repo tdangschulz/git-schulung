@@ -26,7 +26,7 @@ git config core.hooksPath .githooks
 | `post-commit` | Nach erfolgreichem Commit | Schreibt automatisch CHANGELOG.md |
 | `post-merge` | Nach einem Merge | Prüft auf geänderte Dependencies |
 
-## Übungsaufgaben
+## Befehlsablauf
 
 ### 1. Hooks installieren und testen
 

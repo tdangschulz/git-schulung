@@ -17,7 +17,7 @@ Demo für gute Commit-Konventionen und sinnvolle Commit-Größen.
 
 Der Ordner ist leer — der Trainer erstellt die Dateien live.
 
-## Übungsaufgaben
+## Befehlsablauf
 
 1. **Repo initialisieren**
    `git init`

@@ -17,7 +17,7 @@ Demo des GitFlow-Branching-Modells (feature, develop, release, hotfix).
 
 Start: `version.txt` mit "v1.0".
 
-## Übungsaufgaben
+## Befehlsablauf
 
 ### Phase 1: Setup
 

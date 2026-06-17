@@ -19,7 +19,7 @@ Demo verschiedener Merge-Strategien: --no-ff, --ff-only, --squash.
 
 Start: `file.txt` mit "start".
 
-## Übungsaufgaben
+## Befehlsablauf
 
 ### Setup: Zwei Feature-Branches
 

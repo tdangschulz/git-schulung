@@ -18,7 +18,7 @@ Demo des zentralen Workflows mit einem gemeinsamen main-Branch.
 
 Start: `datei.txt` mit "Dev A's Arbeit".
 
-## Übungsaufgaben
+## Befehlsablauf
 
 1. **Initial-Commit**
    `git init && git add datei.txt && git commit -m "Dev A initial"`

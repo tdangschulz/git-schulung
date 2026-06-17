@@ -19,7 +19,7 @@ Demo zur Entstehung und Auflösung von Merge-Konflikten.
 
 Start: `config.txt` mit "color = blue".
 
-## Übungsaufgaben
+## Befehlsablauf
 
 ### Konflikt provozieren
 

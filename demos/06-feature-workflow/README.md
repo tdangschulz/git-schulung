@@ -18,7 +18,7 @@ Demo des Feature-Branch-Workflows mit Pull Requests.
 
 Start: main enthält `README.md` mit "main".
 
-## Übungsaufgaben
+## Befehlsablauf
 
 1. **Initial-Commit**
    `git init && git add README.md && git commit -m "Initial"`

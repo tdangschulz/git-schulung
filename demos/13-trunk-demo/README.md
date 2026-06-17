@@ -19,7 +19,7 @@ Enthält:
 - `app.py` – einfache Applikation
 - `config.py` – Konfiguration mit Feature-Flags
 
-## Übungsaufgaben
+## Befehlsablauf
 
 1. **Initial-Commit**
    `git init && git add . && git commit -m "Initial app"`

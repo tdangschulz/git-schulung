@@ -15,7 +15,7 @@ git switch -c feature/neu
 
 Start: `datei.txt` enthält "Zeile 1".
 
-## Übungsaufgaben
+## Befehlsablauf
 
 1. **Initial-Commit**
    `git init && git add datei.txt && git commit -m "Initial commit"`

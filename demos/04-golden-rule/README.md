@@ -18,7 +18,7 @@ Demo zur Goldenen Regel: "Rebase niemals öffentliche Commits, die andere bereit
 
 Start: `file.txt` mit "Initial".
 
-## Übungsaufgaben
+## Befehlsablauf
 
 ### Setup: Zwei Entwickler, ein Feature-Branch
 

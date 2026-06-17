@@ -21,7 +21,7 @@ Mit diff3 sieht man beim Konflikt auch den gemeinsamen Vorfahren — das macht d
 
 Start: `theme.txt` mit drei Zeilen.
 
-## Übungsaufgaben
+## Befehlsablauf
 
 1. **Initial-Commit**
    `git init && git add theme.txt && git commit -m "Initial theme"`
