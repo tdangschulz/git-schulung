@@ -142,6 +142,41 @@ with open('$OBJECT_FILE', 'rb') as f:
 # → Zeigt: "commit 230\0tree ... parent ... author ..."
 ```
 
+#### 🔍 Den Hash nach `git add` sehen
+
+`git add` speichert die Datei sofort als Blob in `.git/objects/` —
+noch vor dem Commit. Hier siehst du den Hash:
+
+```bash
+echo "Hallo Git" > test.txt
+
+# 1. Hash berechnen (ohne zu adden):
+git hash-object test.txt
+# → e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+
+# 2. Add + Hash aus dem Index lesen:
+git add test.txt
+git ls-files --stage test.txt
+# → 100644 e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 0	test.txt
+#    \mode/ \_______________ Hash _________________/ \_stage/ \_pfad/
+
+# 3. Nur den Hash:
+git ls-files --stage test.txt | awk '{print $2}'
+# → e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+
+# 4. Gleich den Inhalt aus dem Blob lesen:
+HASH=$(git ls-files --stage test.txt | awk '{print $2}')
+git cat-file -p $HASH
+# → "Hallo Git"
+```
+
+**Bonus: Hash selbst berechnen (zum Verständnis):**
+```bash
+echo -e "blob 10\\0Hallo Git\\n" | sha1sum
+# Muss den gleichen Hash ergeben wie git hash-object!
+# (blob = Typ, 10 = Länge von "Hallo Git\\n", \\0 = Null-Byte-Trenner)
+```
+
 **Für Trainer:** Das ist der Aha-Moment! Zeig den Teilnehmern,
 dass ein Commit in der Rohform ein simpler Text ist:
 "commit 230\0tree xyz parent abc Hallo Nachricht"
