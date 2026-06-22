@@ -366,9 +366,141 @@ git commit -m "Meine Änderung"
 | **Blob** | Datei-Inhalt | `.git/objects/xx/xxxx...` |
 | **Tree** | Verzeichnis-Struktur | `.git/objects/xx/xxxx...` |
 | **Commit** | Snapshot + Metadaten | `.git/objects/xx/xxxx...` |
-| **Index** | Staging-Area mit Datei-Hashes | `.git/index` |
+| **Index** | Staging-Area mit Datei-Hashes | `.git/index` (binär) |
 | **Ref** | Zeiger auf Commit | `.git/refs/heads/main` |
 | **HEAD** | Aktueller Branch/Marker | `.git/HEAD` |
+
+#### 📋 Die Index-Datei (` .git/index` ) im Detail
+
+Der Index ist **die Staging-Area**. Eine binäre Datei, die GITs
+geplanten nächsten Commit beschreibt. Sie liegt als `.git/index`
+im Root des `.git`-Ordners.
+
+```bash
+# Existiert sie?
+ls -la .git/index
+# → -.rw-r--r-- ... .git/index
+
+# Wie groß?
+wc -c .git/index
+# → 844 .git/index (wächst mit jeder gestagten Datei)
+```
+
+**Was im Index steht (pro Datei):**
+
+```
+Datei-Eintrag im Index:
+┌─────────────────────────────────────────────┐
+│ ctime (creation time)                       │
+│ mtime (modification time)                   │
+│ dev + ino (Device + Inode-Nummer)           │
+│ uid + gid (User-ID + Group-ID)              │
+│ size (Dateigröße)                           │
+│ SHA-1-Hash (vom Datei-Inhalt)               │
+│ Flags (Stage: 0=normal, 1/2/3=Merge)       │
+│ Dateiname (variable Länge, mit \0)          │
+└─────────────────────────────────────────────┘
+```
+
+**Warum ctime, mtime, ino, uid, gid?**
+Damit Git erkennen kann, ob eine Datei sich **sicher nicht** geändert
+hat, ohne sie neu einlesen zu müssen. Wenn ctime+mtime+ino+size gleich
+sind, hat Git sie seit dem letzten Check nicht angefasst.
+
+**Live: Index-Inhalt als Text ansehen:**
+
+```bash
+cd /tmp/git-schulung/recap-demo
+
+# Alle gestagten Dateien + Hashes:
+git ls-files --stage
+# → 100644 e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 0	README.md
+#    \_modus/ \_____________ hash _______________/ | \_pfad/
+#                                                 stage
+
+# Nur Dateinamen:
+git ls-files
+# → README.md
+
+# Nur den Index parsen (Rohdaten):
+python3 -c "
+import os, mmap
+with open('.git/index', 'rb') as f:
+    data = f.read()
+    
+# Header: DIRC + Version + Anzahl Einträge
+print('Signature:', data[0:4].decode())  # DIRC
+print('Version:', int.from_bytes(data[4:8], 'big'))
+entry_count = int.from_bytes(data[8:12], 'big')
+print('Entries:', entry_count)
+
+# Ersten Eintrag parsen
+pos = 12
+for i in range(min(entry_count, 3)):
+    ctime_s = int.from_bytes(data[pos:pos+4], 'big')
+    ctime_ns = int.from_bytes(data[pos+4:pos+8], 'big')
+    mtime_s = int.from_bytes(data[pos+8:pos+12], 'big')
+    dev = int.from_bytes(data[pos+20:pos+24], 'big')
+    ino = int.from_bytes(data[pos+24:pos+28], 'big')
+    mode = int.from_bytes(data[pos+28:pos+32], 'big')
+    uid = int.from_bytes(data[pos+32:pos+36], 'big')
+    gid = int.from_bytes(data[pos+36:pos+40], 'big')
+    size = int.from_bytes(data[pos+40:pos+44], 'big')
+    sha = data[pos+44:pos+64].hex()
+    flags = int.from_bytes(data[pos+64:pos+66], 'big')
+    
+    # Dateiname beginnt nach flags, bis Null-Byte
+    name_end = data.index(b'\\x00', pos+66)
+    name = data[pos+66:name_end].decode()
+    
+    print(f'Eintrag {i+1}: {name}')
+    print(f'  Hash: {sha}')
+    print(f'  Größe: {size} Bytes')
+    print(f'  Modus: {oct(mode)}')
+    print()
+    
+    pos = (name_end + 1 + 7) // 8 * 8  # Nächster Eintrag (8-Byte aligned)
+"
+```
+
+**Ausgabe sieht dann so aus:**
+```
+Signature: DIRC
+Version: 2
+Entries: 3
+Eintrag 1: README.md
+  Hash: e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+  Größe: 15 Bytes
+  Modus: 0o100644
+
+Eintrag 2: src/main.js
+  Hash: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0
+  Größe: 2048 Bytes
+  Modus: 0o100644
+```
+
+**Der Index bei Merge-Konflikten:**
+
+Bei einem Konflikt kriegt eine Datei **drei Einträge** im Index —
+daher nennt man das auch **Stage**:
+
+```bash
+# Während eines Merge-Konflikts:
+git ls-files --stage
+# → 100644 abc123... 0	config.txt  (normal)
+# → 100644 def456... 1	styles.js   (BASE = gemeinsamer Vorfahr)
+# → 100644 789abc... 2	styles.js   (OURS = HEAD, unser Branch)
+# → 100644 123def... 3	styles.js   (THEIRS = der andere Branch)
+#                    ^
+#                    Stage-Nummer!
+```
+
+**Für Trainer:** Der Index ist der versteckte Held. Er ist WARUM
+Git `add` und `commit` getrennt hat. SVN z.B. hat nur `commit`.
+Der Index erlaubt:
+- Nur Teile einer Datei zu commiten (`git add -p`)
+- Merge-Konflikte zu managen (3 Stages gleichzeitig)
+- Zu sehen, WAS genau in den nächsten Commit kommt
 
 ---
 
