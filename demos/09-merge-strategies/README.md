@@ -24,7 +24,7 @@ git log --oneline --graph --all
 Die Strategie bestimmt, **WIE** Git zwei (oder mehr) Snapshots
 zusammenführt.
 
-## Die Vier Strategien
+## Die Fünf Strategien
 
 ### 1. recursive — Der Standard (Default)
 
@@ -83,7 +83,31 @@ Nur wenn alle konfliktfrei sind.
 
 ---
 
-### 4. ours — Unser Code gewinnt immer
+### 4. subtree — Fremde Projekte einbinden
+
+```bash
+git merge -s subtree <branch>
+```
+
+**Was passiert:**
+- Erkennt automatisch, ob der gemergte Branch in ein Unterverzeichnis gehört
+- Verschiebt die Dateien des anderen Branches in das passende Unterverzeichnis
+- Perfekt zum Einbinden von Bibliotheken, Themes, externen Projekten
+
+**Beispiel:**
+```bash
+# Ein Theme-Repo in den Ordner themes/ mergen
+git remote add theme-repo https://...
+git fetch theme-repo
+# --allow-unrelated-histories = zwei unabhängige Repos waren vorher getrennt
+git merge -s subtree --allow-unrelated-histories theme-repo/main --squash
+```
+
+👉 Eine Alternative zu Git Submodules — einfacher, aber statischer.
+
+---
+
+### 5. ours — Unser Code gewinnt immer
 
 ```bash
 git merge -s ours <branch>
@@ -378,7 +402,45 @@ Klassiker für veraltete Experimente.
 
 ---
 
-### Demo E: --no-ff vs --squash vs --ff-only
+### Demo E: subtree — Externes Projekt einbinden
+
+```bash
+# Frisches Mini-Repo
+mkdir -p demo-subtree && cd demo-subtree
+git init
+
+# ====== Hauptprojekt ======
+echo "# Meine App" > README.md
+git add . && git commit -m "Initial: Hauptprojekt"
+
+# ====== Externes Projekt simulieren ======
+mkdir -p /tmp/externes-lib && cd /tmp/externes-lib
+git init
+echo "/*! Bootstrap */" > bootstrap.css
+echo "MIT License" > LICENSE
+git add . && git commit -m "Bootstrap v1.0"
+
+# ====== Subtree-Merge ins Hauptprojekt ======
+cd /tmp/git-schulung/merge-strategies/demo-subtree
+git remote add lib /tmp/externes-lib
+git fetch lib
+git merge -s subtree --allow-unrelated-histories lib/master \
+  -m "Bootstrap per Subtree-Merge eingebunden"
+
+# Ergebnis: bootstrap.css liegt in themes/ (nicht im Root!)
+ls -la  # bootstrap.css? Nein — subtree hat erkannt, dass es passt
+find . -name "*.css"  # wo ist es gelandet?
+
+git log --oneline --graph --all
+```
+
+**🗣️ Erklären:** `-s subtree` erkennt automatisch den passenden
+Subdirectory-Prefix. Wenn das externe Repo einen gemeinsamen
+Root-Pfad hat, verschiebt Git die Dateien dorthin.
+
+---
+
+### Demo F: --no-ff vs --squash vs --ff-only
 
 ```bash
 cd /tmp/git-schulung/merge-strategies
@@ -423,6 +485,7 @@ git merge --ff-only feature-a  # ❌ Fehler!
 | **recursive** | `merge` (Default) | 2 | ✅ Wird gelöst | ✅ Ja | **Standard** |
 | **resolve** | `merge -s resolve` | 2 | ✅ Wird gelöst | ✅ Ja | Legacy/Notnagel |
 | **octopus** | `merge -s octopus` | 3+ | ❌ Schlägt fehl | ✅ Ja (× Eltern) | Branches bündeln |
+| **subtree** | `merge -s subtree` | 2 | ✅ Wird gelöst | ✅ Ja | Externes Projekt einbinden |
 | **ours** | `merge -s ours` | 2 | ✅ Ignoriert anderen | ✅ Ja | Branch als tot markieren |
 
 ## Merge-Optionen/Flags (`--`)
@@ -441,6 +504,10 @@ git merge --ff-only feature-a  # ❌ Fehler!
 **❗ `-s ours` vs `-X ours` verwechseln:**
 → `-s ours` = kompletter Branch verworfen (wenn du den Code willst → falsch!)
 → `-X ours` = nur Konflikte mit unserer Version (meist das, was gemeint ist)
+
+**❗ `-s subtree` vergessen bei externen Repos:**
+→ Ohne `-s subtree` landen die Dateien im Root statt im Ziel-Ordner
+→ `git merge -s subtree` verschiebt automatisch ins passende Subdir
 
 **❗ Octopus mit Konflikten:**
 → `git merge -s octopus` schlägt sofort fehl → `git merge --abort` → einzeln mergen
@@ -478,5 +545,5 @@ git reflog
 
 **Die wichtigste Botschaft:**
 > `git merge` ohne Angabe = `-s recursive` = der beste Algorithmus.
-> Die anderen (resolve, octopus, ours) sind Spezialfälle für seltene Situationen.
+> Die anderen (resolve, octopus, subtree, ours) sind Spezialfälle für seltene Situationen.
 > Die Flags `--no-ff`, `--squash`, `--ff-only` nutzt man dagegen täglich.
