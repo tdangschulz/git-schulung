@@ -52,6 +52,101 @@ Ohne `.git/` ist ein Ordner einfach nur ein Ordner.
 (Dateien, Bäume, Commits) wird hier als Objekt gespeichert. Wenn du `git init`
 machst, wird dieser Ordner angelegt — leer, bereit zum Befüllen.
 
+#### 📦 Der Objects-Ordner im Detail
+
+**Dateinamen = SHA-1-Hashes.** Jedes Objekt bekommt einen
+40-stelligen Hex-Hash. Die ersten 2 Zeichen werden zum
+Ordner-Namen, die restlichen 38 zum Dateinamen:
+
+```
+SHA-1-Hash:     e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+Speicherort:    .git/objects/e6/9de29bb2d1d6434b8b29ae775ad8c2e48c5391
+                          ^^ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                       Ordner (2)           Datei (38)
+```
+
+**Warum 2+38 statt 40 in einem Ordner?**
+- Ein Ordner mit 16² = 256 Unterordnern (00-ff) ist effizient
+- Jeder Unterordner hat max. ~65k Dateien statt Millionen im Root
+- Dateisysteme werden schneller und stabiler durch weniger Dateien pro Ordner
+  (ältere Dateisysteme haben Limits für Dateien pro Ordner)
+
+**Die 4 Objekt-Typen die in `.git/objects/` landen:**
+
+| Typ | Kürzel | Enthält | Erzeugt durch |
+|---|---|---|---|
+| **Blob** | `blob` | Reiner Datei-Inhalt (kein Dateiname!) | `git add` |
+| **Tree** | `tree` | Verzeichnis-Struktur (Dateiname → Blob-Hash) | `git commit` |
+| **Commit** | `commit` | Tree-Hash + Parent(s) + Metadaten + Nachricht | `git commit` |
+| **Tag** | `tag` | Commit-Hash + Annotation | `git tag -a` |
+
+**Das Rohformat eines Objekts:**
+
+Jedes Objekt besteht intern aus einem **Header** und **Content**,
+beides zlib-komprimiert:
+
+```
+[Typ] [Größe in Bytes]\0[Content]
+
+Beispiel Blob:
+blob 11\0# Hallo Git
+
+Beispiel Commit:
+commit 230\0tree 7c9b5a...
+parent abc123...
+author Max ...
+committer Max ...
+
+Initial commit
+```
+
+**Loose vs. Packed Objects:**
+
+| Status | Beschreibung | Wo? |
+|---|---|---|
+| **Loose** | Einzelne Datei pro Objekt | `.git/objects/xx/xxx...` |
+| **Packed** | Viele Objekte in einer Datei | `.git/objects/pack/*.pack` |
+
+Git fängt mit **loose** an. Irgendwann (beim automatischen `git gc` oder
+manuell) packt Git alte Objekte in `.pack`-Dateien zusammen — das spart
+Platz und ist schneller.
+
+```bash
+# Alle losen Objekte anzeigen:
+find .git/objects -type f ! -path "*/pack/*"
+# → Format: .git/objects/xx/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# Pack-Dateien anzeigen:
+ls -la .git/objects/pack/
+# → *.pack = komprimierte Sammlung vieler Objekte
+# → *.idx = Index für schnellen Zugriff
+```
+
+**Live: Ein Objekt mit Kopf und Kragen ansehen:**
+
+```bash
+cd /tmp/git-schulung/recap-demo
+
+# Roh-Inhalt eines Commit-Objekts (unkomprimiert):
+HASH=$(git rev-parse HEAD)
+OBJECT_FILE=$(echo $HASH | sed 's/\(..\)\(.*\)/.git\/objects\/\1\/\2/')
+echo "Objekt-Datei: $OBJECT_FILE"
+
+# Inhalt roh ansehen (zlib dekomprimieren):
+python3 -c "
+import zlib, sys
+with open('$OBJECT_FILE', 'rb') as f:
+    raw = zlib.decompress(f.read())
+    print(raw.decode())
+"
+# → Zeigt: "commit 230\0tree ... parent ... author ..."
+```
+
+**Für Trainer:** Das ist der Aha-Moment! Zeig den Teilnehmern,
+dass ein Commit in der Rohform ein simpler Text ist:
+"commit 230\0tree xyz parent abc Hallo Nachricht"
+Kein Binary, keine Magie — nur Text + zlib-Kompression.
+
 ---
 
 ### 2. `git status`
@@ -290,6 +385,42 @@ echo "Sein Tree: $(git rev-parse HEAD^{tree})"
 # Das Tree-Objekt referenziert die Blobs (Dateien):
 git ls-tree HEAD
 # → Zeigt: Modus, Typ, Hash, Dateiname
+```
+
+**Der Objekt-Graph visualisiert:**
+
+```bash
+# Schritt 1: Commit-Objekt anzeigen
+git cat-file -p HEAD
+# → tree 7c9b5a...
+# → parent abc123...
+# → author Max Mustermann ...
+# → Initial commit
+
+# Schritt 2: Dem Tree folgen
+git cat-file -p 7c9b5a  # (Tree-Hash aus Schritt 1)
+# → 100644 blob e69de29... README.md
+# → 100755 blob a1b2c3d... script.sh
+
+# Schritt 3: Dem Blob folgen (= Datei-Inhalt)
+git cat-file -p e69de29  # (Blob-Hash aus Schritt 2)
+# → Inhalt der Datei!
+```
+
+**Grafisch als Kette:**
+```
+Commit ──→ Tree ──→ Blob (README.md)
+                  ──→ Blob (script.sh)
+                  ──→ Tree (src/) ──→ Blob (index.js)
+                                    ──→ Blob (style.css)
+```
+
+**Prüfen ob ein Objekt loose oder packed ist:**
+```bash
+# Loose?
+ls -la .git/objects/$(git rev-parse HEAD | cut -c1-2)/$(git rev-parse HEAD | cut -c3-40) 2>/dev/null
+# oder packed?
+git verify-pack .git/objects/pack/*.idx 2>/dev/null | grep $(git rev-parse HEAD)
 ```
 
 ---
