@@ -281,7 +281,7 @@ git commit -m "Merge feature/darkmode – Konflikt gelöst"
 git log --oneline --graph --all
 ```
 
-### 2.3 Rebase (die Alternative zu Merge)
+### 2.3 Rebase — Die Grundlagen
 
 **Merge vs Rebase:**
 - `merge` = "Ich nehme deine Änderungen und meine"
@@ -339,7 +339,214 @@ git rebase --continue
 # Kein -m nötig – Rebase übernimmt die Commit-Message
 ```
 
-### 2.5 Stash – Änderungen zwischenspeichern
+### 2.5 Rebase Deep Dive — Wie es wirklich funktioniert
+
+#### 🧠 Was passiert beim Rebase intern?
+
+Rebase ist kein magisches „Bäume umstecken". Intern macht Git für JEDEN
+Commit auf deinem Branch Folgendes:
+
+1. **Finde den gemeinsamen Vorfahren** (Merge Base) der beiden Branches
+2. **Sammle alle Commits** seit diesem Vorfahren auf deinem Branch
+3. **Setze den Branch-Pointer** auf die Spitze des Ziel-Branches
+4. **Spiele jeden gesammelten Commit einzeln neu ein** (cherry-pick)
+
+```bash
+# Ausgangssituation:
+# main:     A---B---C
+#                \
+# feature:         D---E
+
+# git rebase main (von feature aus) macht:
+# 1. Merge-Base = B
+# 2. Sammelt: D, E
+# 3. Setzt feature auf C (Spitze von main)
+# 4. Spielt D' und E' neu ein (neue Hashes!)
+#
+# Ergebnis:
+# main:     A---B---C
+#                   \
+# feature:            D'---E'
+```
+
+⚠️ **Wichtig:** Die neu eingespielten Commits (D', E') haben **neue Hashes**,
+obwohl der Inhalt identisch ist. Das ist der Grund, warum man **niemals**
+Commits rebasen soll, die andere bereits haben (siehe Golden Rule).
+
+---
+
+#### 🔄 Interaktives Rebase (`rebase -i`)
+
+Mit `git rebase -i` kann man Commits umschreiben: umsortieren, löschen,
+verschmelzen oder Nachrichten ändern.
+
+```bash
+# Die letzten 3 Commits bearbeiten
+git rebase -i HEAD~3
+
+# Öffnet einen Editor mit:
+# pick abc1234 Erster Commit
+# pick def5678 Zweiter Commit
+# pick 7890abc Dritter Commit
+#
+# Mögliche Befehle:
+# pick    = Commit behalten (default)
+# reword  = Nur die Commit-Nachricht ändern
+# edit    = Commit-Inhalt ändern
+# squash  = Mit vorherigem Commit verschmelzen
+# fixup   = Wie squash, aber Nachricht verwerfen
+# drop    = Commit löschen
+#
+# Beispiel: Zwei Commits zusammenführen:
+# pick abc1234 Erster Commit
+# squash def5678 Zweiter Commit  ← wird in ersten gemerged
+# pick 7890abc Dritter Commit
+```
+
+**Häufigste Anwendung: letzte Commit-Nachricht ändern**
+
+```bash
+# Noch schneller als rebase -i:
+git commit --amend -m "Neue Nachricht"
+# Ändert den letzten Commit (erzeugt neuen Hash!)
+```
+
+---
+
+#### 🎯 Rebase vs. Merge — Wann was?
+
+| Situation | Merge | Rebase |
+|---|---|---|
+| Feature-Branch lokal | ❌ | ✅ Saubere Historie |
+| Feature-Branch öffentlich (PR) | ✅ Sichtbar | ❌ Niemals! |
+| main auf den neuesten Stand bringen | ✅ | ✅ (`pull --rebase`) |
+| Mehrere Commits zusammenfassen | ❌ | ✅ (`rebase -i squash`) |
+| Große Teams, viele Branches | ✅ Klar | ⚠️ Nur mit Disziplin |
+
+**Faustregel:**
+- **Rebase lokal, merge öffentlich**
+- Wenn du der Einzige auf einem Branch bist → rebase ruhig
+- Wenn jemand anders den Branch hat → nie rebasen (zerstörst deren History)
+- Für `git pull` → `git pull --rebase` ist oft besser als `git pull` (kein lästiger
+  Merge-Commit beim Aktualisieren)
+
+---
+
+#### 🚨 Die Goldene Regel des Rebase
+
+> **Rebase niemals Commits, die bereits auf einem öffentlichen Remote liegen
+> und von anderen genutzt werden!**
+
+**Warum?**
+- Rebase schreibt History um (neue Hashes)
+- Andere haben die alten Hashes lokal
+- Chaos: Merge-Konflikte, doppelte Commits, "Geister-Commits"
+
+**✅ Erlaubt:**
+- Deine lokalen, noch nicht gepushten Commits
+- Deinen eigenen Feature-Branch vor dem PR
+- Commits in einem PR-Branch (solange du allein dran arbeitest)
+
+**❌ Verboten:**
+- `main` oder `dev` auf einem Remote
+- Branches, an denen andere mitarbeiten
+- Bereits gepushte Commits (außer dir gehört der Branch allein und
+  du weisst, was du tust)
+
+```bash
+# SICHER: Nur lokale Commits vor dem ersten Push
+# ...committen, committen, committen...
+git rebase -i HEAD~3  # Noch lokal, kein Problem
+
+# UNSICHER: Bereits gepushte Commits rebasen
+# git push  ← schon passiert
+# ...
+# git rebase main  ← JETZT HAST DU EIN PROBLEM
+# git push --force-with-lease  ← Überschreibt Remote, andere hassen dich
+```
+
+---
+
+#### 🛟 Rebase-Abbruch & Wiederherstellung
+
+**Rebase mittendrin abbrechen:**
+```bash
+git rebase --abort
+# Alles wieder wie vor dem Rebase
+```
+
+**Rebase war erfolgreich, aber das Ergebnis gefällt nicht:**
+```bash
+# Mit Reflog den alten Stand finden
+git reflog
+# Finde den Commit VOR dem Rebase (z.B. abc1234)
+git reset --hard abc1234
+# Alles zurückgesetzt
+```
+
+**Rebase mit Konflikt überspringen (ein Commit auslassen):**
+```bash
+git rebase --skip
+# Nächsten Commit überspringen (Vorsicht: Inhalt geht verloren!)
+```
+
+---
+
+#### 💡 Advanced: `pull --rebase` als Standard
+
+```bash
+# Globalen Default setzen (empfohlen):
+git config --global pull.rebase true
+
+# Dann reicht:
+git pull
+# = git fetch + git rebase (statt git merge)
+# Keine nervigen Merge-Commits beim Pull mehr!
+
+# Einmalig:
+git pull --rebase
+```
+
+---
+
+#### 🖥️ Trainer-Live-Demo: Interactive Rebase
+
+**Ziel:** Zeigen wie man Commits mit `rebase -i` verschmelzen kann.
+
+```bash
+cd /tmp/git-schulung
+mkdir -p demo-rebase && cd demo-rebase
+git init
+
+# Mehrere Kleinschritte als einzelne Commits
+echo "# Start" > index.html
+git add index.html && git commit -m "html datei erstellt"
+echo "<body>" >> index.html
+git add index.html && git commit -m "body tag"
+echo "<h1>Titel</h1>" >> index.html
+git add index.html && git commit -m "titel"
+echo "<p>Text</p>" >> index.html
+git add index.html && git commit -m "paragraph"
+
+# Historie: 4 Commits, die eigentlich ein logischer Schritt sind
+
+git log --oneline
+# Alle 4 Commits zu einem verschmelzen:
+git rebase -i --root
+# Ersten Commit auf "pick" lassen, restliche auf "fixup"
+# Nach Speichern: Nur noch 1 Commit
+
+git log --oneline
+# Viel sauberer!
+```
+
+**🗣️ Erklären:** `rebase -i` ist das Schweizer Taschenmesser für
+Commit-Historie. Am häufigsten genutzt um "hab vergessen was einzubauen"
+Commits zu verschmelzen, bevor man einen PR aufmacht.
+
+---
+
+### 2.7 Stash – Änderungen zwischenspeichern
 
 ```bash
 # Aktuelle Änderungen weglegen
@@ -367,7 +574,7 @@ git stash drop stash@{0}
 git stash clear
 ```
 
-### 2.6 Remote-Repos (GitHub/GitLab)
+### 2.8 Remote-Repos (GitHub/GitLab)
 
 ```bash
 # Remote hinzufügen
@@ -397,7 +604,7 @@ git pull --rebase
 git config --global pull.rebase true
 ```
 
-### 2.7 .gitignore vertiefen
+### 2.9 .gitignore vertiefen
 
 ```bash
 # Beispiel .gitignore
@@ -441,7 +648,7 @@ git status
 # .env wird NICHT angezeigt!
 ```
 
-### 2.8 Tags
+### 2.10 Tags
 
 ```bash
 # Leichten Tag (nur Name)
@@ -461,7 +668,7 @@ git push origin --tags  # Alle Tags
 git checkout v1.0.0
 ```
 
-### 2.9 Cherry-Pick (einzelne Commits übernehmen)
+### 2.11 Cherry-Pick (einzelne Commits übernehmen)
 
 ```bash
 # Einen bestimmten Commit in den aktuellen Branch holen
@@ -472,7 +679,7 @@ git cherry-pick abc1234  # Hash des gewünschten Commits
 git cherry-pick abc1234 def5678
 ```
 
-### 2.10 Git Workflows – Überblick
+### 2.12 Git Workflows – Überblick
 
 **GitHub Flow (einfach):**
 ```
@@ -494,7 +701,7 @@ git checkout main
 git pull
 ```
 
-### 2.11 Abschlussübung – Der komplette Workflow
+### 2.13 Abschlussübung – Der komplette Workflow
 
 ```bash
 mkdir ~/git-finale && cd ~/git-finale && git init
