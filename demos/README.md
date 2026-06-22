@@ -31,7 +31,7 @@ bash setup-demos.sh     # Frisch entpacken
 | 06 | Feature Workflow | Feature-Branches + --no-ff | `git switch -c feature/dark-mode` |
 | 07 | Gitflow | develop, release, hotfix Zyklus | `git switch -c feature/login` |
 | 08 | Commit Style | Gute Commit-Nachrichten + add -p | Dateien selbst erstellen |
-| 09 | Merge-Strategien | --no-ff vs --squash vs --ff-only | `git merge --no-ff feature/moin` |
+| 09 | Merge-Strategien & -Optionen | -s recursive/resolve/octopus/ours + --no-ff/--squash/--ff-only | `git log --oneline --graph --all` |
 | 10 | Merge-Konflikt | Konflikt provozieren + lösen | `git merge feature/change-color` |
 | 11 | diff3 | Konflikte mit Vorfahren-Ansicht | `git merge feature/dark` |
 | 12 | Rerere | Automatische Konfliktlösung | `git merge feature/v2` |
