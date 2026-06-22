@@ -49,6 +49,187 @@ Start: `datei.txt` enthält "Zeile 1".
    Mach dasselbe Szenario nochmal und merge statt rebase.
    Welchen Unterschied siehst du in der History?
 
+### 🔬 Rebase vs. Merge: Was passiert mit den Hashes?
+
+#### Merge: Hashes bleiben GLEICH
+
+```bash
+# Ausgangssituation (beide Branches haben divergiert):
+# main:     A---B
+#              \
+# feature:         C---D
+
+# git merge feature (von main aus):
+git checkout main
+git merge feature -m "Merge feature"
+```
+
+```
+main:     A---B---M (Merge-Commit)
+              \   /
+feature:         C---D
+                     ^
+                   C und D sind UNVERÄNDERT!
+                   Ihre Parent-Kette C → A bleibt intakt.
+                   SHA-1(C) = abc123... (vorher und nachher GLEICH)
+                   SHA-1(D) = def456... (vorher und nachher GLEICH)
+```
+
+**Warum?** Merge erzeugt einen **NEUEN** Merge-Commit (M), der beide
+Eltern referenziert. Die originalen Commits C und D werden **nicht
+angetastet** — sie leben friedlich auf ihrem Branch weiter.
+
+```
+Merge-Commit M:
+┌─────────────────────────────────────────┐
+│ tree xyz123...                          │
+│ parent B ← Erster Parent (HEAD = main)  │
+│ parent D ← Zweiter Parent (feature)     │ ← NEU!
+│ author Max <max@x> ...                  │
+│ Merge feature                           │
+└─────────────────────────────────────────┘
+```
+
+**C und D sind im Log sichtbar:**
+```bash
+git log --oneline --graph --all
+# → *   M Merge feature
+# → |\
+# → | * D Feature commit B  ← Selber Hash wie vorher!
+# → | * C Feature commit A  ← Selber Hash wie vorher!
+# → * B Main commit 1
+# → * A Initial commit
+```
+
+#### Rebase: Hashes werden NEU
+
+```bash
+# Gleiche Ausgangssituation:
+# main:     A---B
+#              \
+# feature:         C---D
+
+# git rebase main (von feature aus):
+git checkout feature
+git rebase main
+```
+
+```
+main:     A---B
+              \
+feature:         C'---D'
+                     ^
+                   C' hat NEUEN Parent (B statt A)!
+                   D' hat NEUEN Parent (C' statt C)!
+                   SHA-1(C') = 111aaa... (ANDERER Hash als C!)
+                   SHA-1(D') = 222bbb... (ANDERER Hash als D!)
+```
+
+**Warum?** Rebase SCHNEIDET die Commits C und D ab und SETZT sie
+neu auf B. Weil der Parent sich ändert, ändert sich der SHA-1-Hash.
+
+```
+# Vor Rebase:
+# C = commit 210\0tree e69de... parent A author ... Feature commit A
+# D = commit 210\0tree f1a2b... parent C author ... Feature commit B
+
+# Nach Rebase:
+# C' = commit 210\0tree e69de... parent B author ... Feature commit A
+#                                             ^^^^^^ ANDERS!
+# D' = commit 210\0tree f1a2b... parent C' author ... Feature commit B
+#                                             ^^^^^^^ ANDERS!
+```
+
+#### Die drei Unterschiede auf einen Blick
+
+| Aspekt | Merge | Rebase |
+|---|---|---|
+| Original-Commits bleiben | ✅ Ja, unverändert | ❌ Nein, werden kopiert |
+| Alte Hashes gültig | ✅ Ja | ❌ Nein, neue Hashes |
+| History | 🔀 Verzweigt (Merge-Commit) | 📏 Linear (kein Knoten) |
+| Parent-Kette | C→A (unverändert) | C'→B (neu verknüpft) |
+| Neue Objekte | 1 Merge-Commit + Tree | 2 neue Commit-Objekte + Trees |
+
+#### Live-Vergleich nachvollziehen
+
+```bash
+# === Szenario aufsetzen ===
+cd /tmp/git-schulung
+rm -rf merge-vs-rebase && mkdir merge-vs-rebase && cd merge-vs-rebase
+git init
+
+# Gemeinsame Basis
+echo "start" > file.txt
+git add . && git commit -m "Initial"  # A
+
+# Feature-Branch mit 2 Commits
+git checkout -b feature
+sleep 1  # Sicherstellen, dass Timestamp anders ist
+echo "Feature A" >> file.txt
+git add . && git commit -m "Feature A"  # C
+echo "Feature B" >> file.txt
+git add . && git commit -m "Feature B"  # D
+
+# Main parallel weiter
+git checkout main
+echo "Main Änderung" >> file.txt
+git add . && git commit -m "Main commit"  # B
+
+echo ""
+echo "=== Alte Hashes notieren ==="
+git log --oneline --all
+
+# === MERGE-Versuch ===
+echo ""
+echo "=== MERGE: Hashes bleiben ==="
+git checkout feature
+FEATURE_HASHES_BEFORE=$(git log --oneline --format=%h)
+echo "Feature-Hashes VOR Merge: $FEATURE_HASHES_BEFORE"
+git checkout main
+git merge feature -m "Merge feature" --no-edit
+git log --oneline --graph --all
+echo ""
+echo "Feature-Hashes NACH Merge:"
+git log --oneline main ^main^1 --format=%h
+# → Selbe Hashes wie vorher!
+
+# === REBASE-Versuch (frisches Szenario) ===
+cd /tmp/git-schulung
+rm -rf rebase-vergleich && mkdir rebase-vergleich && cd rebase-vergleich
+git init
+echo "start" > file.txt
+git add . && git commit -m "Initial"  # A
+git checkout -b feature
+echo "Feature A" >> file.txt
+git add . && git commit -m "Feature A"  # C
+echo "Feature B" >> file.txt
+git add . && git commit -m "Feature B"  # D
+git checkout main
+echo "Main Änderung" >> file.txt
+git add . && git commit -m "Main commit"  # B
+
+echo ""
+echo "=== REBASE: Hashes ändern sich ==="
+git checkout feature
+FEATURE_HASHES_BEFORE=$(git log --oneline --format=%h)
+echo "Feature-Hashes VOR Rebase: $FEATURE_HASHES_BEFORE"
+git rebase main
+echo "Feature-Hashes NACH Rebase:"
+git log --oneline --format=%h
+# → ANDERE Hashes!
+```
+
+#### 🧠 Merksatz
+
+> **Merge bewahrt die alten Commits + Hashes. Rebase schreibt die Geschichte neu.**
+>
+> Merge fügt einen neuen Knoten hinzu (plus Eltern).
+> Rebase schneidet die alten Commits ab und erzeugt neue mit neuen Eltern.
+>
+> Deshalb:
+> - Merge = sicher für öffentliche Branches (Hashes bleiben, alle happy)
+> - Rebase = nur für lokale/ungepushte Branches (niemand hat die alten Hashes)
+
 ### 🔬 Warum ändern sich die Hashes?
 
 Der Hash eines Commits ist der SHA-1 von ALLEN Metadaten, nicht nur
