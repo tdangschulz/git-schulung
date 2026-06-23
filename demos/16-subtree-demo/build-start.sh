@@ -45,13 +45,7 @@ git add .
 git commit -m "feat: Basis-Stylesheet"
 
 # ============================================================
-# 2. Externes Repo von GitHub klonen (für lokale Einbindung im start-Repo)
-# ============================================================
-echo "🔗 Klone externes Repo von $GIT_SUBTREE_REPO ..."
-git clone "$GIT_SUBTREE_REPO" "$BUILD_DIR/git-subtree"
-
-# ============================================================
-# 3. Subtree ins Hauptprojekt einbinden
+# 2. Externes Repo per Subtree ins Hauptprojekt einbinden
 # ============================================================
 cd "$MAIN_DIR"
 git subtree add --prefix=vendor/bootstrap "$GIT_SUBTREE_REPO" main \
@@ -64,14 +58,7 @@ git add README.md
 git commit -m "docs: README aktualisiert"
 
 # ============================================================
-# 4. Externes Repo als lokale Kopie beilegen (für Update/Push-Demos OHNE Internet)
-# ============================================================
-mkdir -p "$BUILD_DIR/start/bootstrap-external"
-cp -r "$BUILD_DIR/git-subtree/"* "$BUILD_DIR/start/bootstrap-external/"
-cp -r "$BUILD_DIR/git-subtree/.git" "$BUILD_DIR/start/bootstrap-external/"
-
-# ============================================================
-# 5. Saubermachen
+# 3. Saubermachen
 # ============================================================
 cd "$MAIN_DIR"
 git checkout main
@@ -87,7 +74,7 @@ git branch -a
 echo ""
 
 # ============================================================
-# 6. Start-Paket erstellen
+# 4. Start-Paket erstellen
 # ============================================================
 cd "$BUILD_DIR"
 tar czf "$SCRIPT_DIR/start.tar.gz" start/
