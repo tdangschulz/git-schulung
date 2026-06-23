@@ -244,6 +244,29 @@ platzsparend, aber ohne Zwischenschritte.
 
 ---
 
+### Git Aliases — Befehle abkürzen
+
+Damit du nicht jedes Mal den ganzen `git subtree ...`-Befehl tippen musst:
+
+```bash
+git config --global alias.bootstrap-add '!git subtree add --prefix=vendor/bootstrap https://github.com/tdangschulz/git-subtree.git main --squash -m "chore: Bootstrap eingebunden"'
+git config --global alias.bootstrap-pull '!git subtree pull --prefix=vendor/bootstrap https://github.com/tdangschulz/git-subtree.git main --squash -m "chore: Bootstrap aktualisiert"'
+git config --global alias.bootstrap-push '!git subtree push --prefix=vendor/bootstrap https://github.com/tdangschulz/git-subtree.git main'
+```
+
+Danach reicht:
+
+```bash
+git bootstrap-add      # = git subtree add ... (einmalig)
+git bootstrap-pull     # = git subtree pull ... (Updates)
+git bootstrap-push     # = git subtree push ... (zurückgeben)
+```
+
+> Der `--global`-Flag speichert die Aliase in `~/.gitconfig`.
+> Mit `git config --global --edit` kannst du sie jederzeit anpassen.
+
+---
+
 ### Vollständige Demo (alles in einem Durchlauf)
 
 ```bash
