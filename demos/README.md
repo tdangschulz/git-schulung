@@ -1,6 +1,6 @@
 # Git-Schulung — Demos
 
-15 interaktive Live-Demos für den Git-Workshop.
+16 interaktive Live-Demos für den Git-Workshop.
 
 ## Setup
 
@@ -38,6 +38,7 @@ bash setup-demos.sh     # Frisch entpacken
 | 13 | Trunk | Feature-Flags statt Branches | Code in app.py einfügen |
 | 14 | Git Hooks | Client-seitige Hooks (pre-commit, commit-msg, pre-push) | `bash scripts/install-hooks.sh`
 | 15 | Git Internals | .git-Ordner, Objekte, Three Trees, Reflog | `cat .git/HEAD`
+| 16 | Subtree | Externe Projekte per subtree einbinden, update/push | `git subtree add --prefix=vendor/bootstrap <repo> <ref>`
 
 ## Tipp für Live-Demos
 
