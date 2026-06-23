@@ -34,11 +34,11 @@ bash setup-demos.sh     # Frisch entpacken
 | 09 | Merge-Strategien & -Optionen | -s recursive/resolve/octopus/ours + --no-ff/--squash/--ff-only | `git log --oneline --graph --all` |
 | 10 | Merge-Konflikt | Konflikt provozieren + lösen | `git merge feature/change-color` |
 | 11 | diff3 | Konflikte mit Vorfahren-Ansicht | `git merge feature/dark` |
-| 12 | Rerere | Automatische Konfliktlösung | `git merge feature/v2` |
+| 12 | Rerere | Automatische Konfliktlösung | `git config rerere.enabled true && git merge feature/v2` |
 | 13 | Trunk | Feature-Flags statt Branches | Code in app.py einfügen |
 | 14 | Git Hooks | Client-seitige Hooks (pre-commit, commit-msg, pre-push) | `bash scripts/install-hooks.sh`
 | 15 | Git Internals | .git-Ordner, Objekte, Three Trees, Reflog | `cat .git/HEAD`
-| 16 | Subtree | Externe Projekte per subtree einbinden, update/push | `git subtree add --prefix=vendor/bootstrap <repo> <ref>`
+| 16 | Subtree | Externe Projekte via merge -s subtree einbinden | `git merge -s subtree <branch>`
 
 ## Tipp für Live-Demos
 
