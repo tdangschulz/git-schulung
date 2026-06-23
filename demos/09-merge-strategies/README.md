@@ -40,13 +40,76 @@ git merge <branch>
 3. Bei mehreren möglichen Bases → rekursiv zusammenführen
 4. Ergebnis = Merge-Commit (bei divergierender History)
 
+**Der 3-Way-Merge im Detail:**
+
+```
+   Base (C1)         HEAD (C2)         Anderer (C3)
+  ┌──────────┐     ┌──────────┐      ┌──────────┐
+  │ console  │     │ console  │      │ console  │
+  │ .log(a)  │     │ .log(a)  │      │ .info(a) │
+  │          │     │ .log(b)  │      │          │
+  │ color:   │     │ color:   │      │ color:   │
+  │ blue     │     │ red      │      │ green    │
+  └──────────┘     └──────────┘      └──────────┘
+       │                │                  │
+       └────────────────┼──────────────────┘
+                        ↓
+              3-Way-Merge Ergebnis:
+              ┌──────────────────────┐
+              │ console.log(a)       │  ← Base=HEAD → HEAD behalten
+              │ console.log(b)       │  ← NEU in HEAD → HEAD behalten
+              │ console.info(a)      │  ← NEU im anderen → Anderer gewinnt
+              │ <<<<<<< HEAD        │  ← KONFLIKT: Base=blue, HEAD=red, anderer=green
+              │ red                  │
+              │ =======              │
+              │ green                │
+              │ >>>>>>> branch       │
+              └──────────────────────┘
+```
+
+**Die Logik pro Zeile:**
+| Base | HEAD | Anderer | Ergebnis |
+|---|---|---|---|
+| gleich | gleich | gleich | bleibt gleich |
+| gleich | **geändert** | gleich | HEAD übernimmt |
+| gleich | gleich | **geändert** | Anderer übernimmt |
+| gleich | **geändert** | **anders geändert** | **🔴 KONFLIKT** |
+| **geändert** | gleich | gleich | Base bleibt (HEAD hat nix getan) |
+| **geändert** | **anders geändert** | gleich | HEAD übernimmt |
+| **geändert** | gleich | **anders geändert** | Anderer übernimmt |
+| **geändert** | **anders** | **wieder anders** | **🔴 KONFLIKT** (3-way!) |
+
+👉 **Git vergleicht nie direkt HEAD ↔ Anderer!** Immer Base ↔ HEAD und Base ↔ Anderer.
+Das ist der Kern des 3-Way-Merge und erklärt, warum Git so selten unnötige Konflikte meldet.
+
+**Das Criss-Cross-Problem (warum „recursive"):**
+
+```
+Normaler Merge (1 Base):           Criss-Cross (2 mögliche Bases):
+        A                                    A
+       / \                                  / \
+      B   C                                B   C
+       \ /                                  \ /
+        D                                   D
+                                              \
+                                               E
+```
+
+Wenn zwei Branches sich gegenseitig gemergt haben, gibt es **mehrere mögliche**
+Merge Bases. `-s recursive` merged dann diese Bases **rekursiv** zu EINEM
+virtuellen Base zusammen, bevor der eigentliche Merge läuft. Daher der Name.
+
 **Optionen** (über `-X`):
-| Option | Wirkung |
-|---|---|
-| `-Xours` | Bei Konflikt: unsere Version nehmen |
-| `-Xtheirs` | Bei Konflikt: deren Version nehmen |
-| `-Xpatience` | Präziserer Diff (langsamer) |
-| `-Xdiff-algorithm=histogram` | Noch präziser |
+| Option | Wirkung | Wann sinnvoll? |
+|---|---|---|
+| `-Xours` | Bei Konflikt: unsere Version nehmen | Hotfix, der safe bleiben muss |
+| `-Xtheirs` | Bei Konflikt: deren Version nehmen | Fremden Branch übernehmen, Konflikte ignorieren |
+| `-Xpatience` | Präziserer Diff (langsamer) | Große Code-Verschiebungen, Refactorings |
+| `-Xdiff-algorithm=histogram` | Noch präziser (LCS-basiert) | Sehr ähnliche Zeilen |
+| `-Xignore-space-change` | Whitespace-Änderungen ignorieren | Formatierungs-Änderungen |
+| `-Xignore-all-space` | Sämtliche Whitespace ignorieren | Komplette Neuformatierung |
+| `-Xno-renames` | Rename-Erkennung deaktivieren | Wenn Dateiumbenennungen stören |
+| `-Xfind-renames=<n>` | Rename-Ähnlichkeitsschwelle (Default: 50%) | Weniger aggressive Rename-Erkennung |
 
 👉 **Für 99% der Fälle ist `git merge` = `git merge -s recursive`**
 
@@ -61,8 +124,26 @@ git merge -s resolve <branch>
 **Der Unterschied:** Nutzt NUR EINEN Merge Base (kein rekursives
 Zusammenführen). Älter, simpler, findet aber auch weniger Konflikte.
 
-**Wann?** Praktisch nie nötig. Historisch für pathologische
-Criss-Cross-Fälle, die recursive nicht packt.
+**Criss-Cross-Vergleich: recursive vs resolve**
+
+Am Beispiel einer Feature-Branch, die mehrfach mit main gemergt wurde:
+
+```
+          main:  A---B---C---D---E---F
+                      \         /
+feature:                X---Y---Z---W
+                           \_____/
+                            (Hotfix aus main
+                             wurde in feature gemergt)
+```
+
+- **resolve** sucht den **letzten** gemeinsamen Vorfahren — das ist B, der
+  erste gemeinsame. Alles dazwischen wird ignoriert → ungenauer Merge
+- **recursive** merged B→C und B→X rekursiv zu einem virtuellen Base,
+  dann C→D mit dem Ergebnis usw. → präziser
+
+**Wann?** Praktisch nie nötig. Historisch für pathologische Criss-Cross-Fälle,
+die recursive nicht packt (Git < 2.30), oder wenn recursive abstürzt (extrem selten).
 
 ---
 
@@ -75,11 +156,24 @@ git merge -s octopus <branch1> <branch2> <branch3> ...
 **Das Besondere:** Merged MEHR ALS ZWEI Branches in EINEM Befehl.
 Erzeugt einen Merge-Commit mit × Eltern.
 
-**⚠️ Kann KEINE Konflikte lösen!** Schlägt fehl, sobald sich
-Branches in die Quere kommen.
+**So funktioniert es intern:**
+1. Octopus merged Branch 1 → HEAD (normaler 2-Way-Merge)
+2. Dann merged es Branch 2 → das **Zwischenergebnis** von Schritt 1
+3. Dann Branch 3 → das Zwischenergebnis von Schritt 2
+4. ... bis alle Branches drin sind
+
+Das ist **kein simultaner Merge** — es ist eine Kette von 2-Way-Merges.
+Nur der letzte Commit (mit allen Eltern) wird aufgezeichnet.
+
+**⚠️ Kann KEINE Konflikte lösen!** Sobald ein Zwischenschritt einen
+Konflikt produziert, bricht octopus ab. Du musst `git merge --abort`
+und die Branches einzeln mergen.
 
 **Wann?** Mehrere unabhängige Topic-Branches bündeln (Release).
 Nur wenn alle konfliktfrei sind.
+
+**Klassischer Use-Case:** Linux-Kernel — ein Release-Branch merged
+Dutzende unabhängige Driver- oder Arch-Branches, die sich nie überschneiden.
 
 ---
 
@@ -94,6 +188,22 @@ git merge -s subtree <branch>
 - Verschiebt die Dateien des anderen Branches in das passende Unterverzeichnis
 - Perfekt zum Einbinden von Bibliotheken, Themes, externen Projekten
 
+**So erkennt subtree das Zielverzeichnis:**
+
+```
+Unser Repo:                          Externes Repo:
+├── src/                             ├── bootstrap.css
+├── vendor/        ←── passt!        ├── grid.css
+│   └── commonfiles/                 ├── LICENSE
+├── README.md                        └── README.md
+└── …
+```
+
+Git zählt: **Wie viele Pfad-Komponenten sind identisch?**
+Wenn der andere Branch keine gemeinsamen Pfade hat (alles im Root),
+sucht Git nach dem **tiefsten gemeinsamen Prefix** im eigenen Repo
+und verschiebt die Dateien dorthin.
+
 **Beispiel:**
 ```bash
 # Ein Theme-Repo in den Ordner themes/ mergen
@@ -102,6 +212,12 @@ git fetch theme-repo
 # --allow-unrelated-histories = zwei unabhängige Repos waren vorher getrennt
 git merge -s subtree --allow-unrelated-histories theme-repo/main --squash
 ```
+
+**`subtree` vs `git subtree` (der Wrapper):**
+- `-s subtree` = **Merge-Strategie** — verschiebt Dateien beim Mergen automatisch
+- `git subtree` = **Komfort-Wrapper** (contrib) — macht Import + Pull + Push einfacher
+- Beide nutzen denselben Algorithmus
+- `git subtree` ruft intern `-s subtree` für den Merge auf
 
 👉 Eine Alternative zu Git Submodules — einfacher, aber statischer.
 
@@ -116,12 +232,52 @@ git merge -s ours <branch>
 **Kein normales Mergen!** Der Merge wird aufgezeichnet (neuer Commit,
 anderer Branch als Vorfahre), aber der **gesamte Inhalt bleibt = HEAD**.
 
-**Wann?** Einen Branch als „erledigt/tot" markieren ohne seinen
-Code zu übernehmen.
+**Wann?**
+- Einen Branch als „erledigt/tot" markieren ohne seinen Code zu übernehmen
+- Experimente: Branch existiert weiter, aber der Code wird nicht gemergt
+- Alte Releases einfrieren (z.B. `release/v1` in `main` mit `-s ours` markieren)
+- Subtree-Ergebnisse fixieren: nach einem Subtree-Merge den Code mit `-s ours`
+  überschreiben und trotzdem die Eltern-Beziehung behalten
+
+**Praktisches Beispiel: Release einfrieren**
+```bash
+# Nach dem Release soll der Branch zwar existieren,
+# aber der Code soll nie wieder in main landen
+git checkout main
+git merge -s ours release/v1 \
+  -m "chore: release/v1 als historisch markiert"
+# release/v1 ist in der History sichtbar,
+# aber main hat keinen Code daraus übernommen
+```
 
 ---
 
-### ⚠️ Wichtige Verwechslungsgefahr!
+---
+
+### Wie Git die Strategie automatisch wählt
+
+Wenn du einfach `git merge <branch>` tippst, führt Git eine **Auto-Detection**
+durch. Es probiert nicht alle Strategien durch, sondern hat feste Regeln:
+
+| Situation | Gewählte Strategie |
+|---|---|
+| 1 Branch, kann Fast-Forward sein | **(kein Merge nötig)** — Fast-Forward |
+| 1 Branch, History divergiert | **recursive** (Default) |
+| 2+ Branches, alle konfliktfrei | **octopus** |
+| 2+ Branches, einer heißt "HEAD" | **ours** (degenerierter Fall) |
+| Subtree-ähnliche Pfade erkannt | **recursive** (nicht automatisch subtree!) |
+
+> ⚠️ **Wichtig:** `-s subtree` wird **nie automatisch** gewählt!
+> Wenn du ein externes Projekt in einen Unterordner mergen willst,
+> musst du immer explizit `-s subtree` angeben. Git rät nicht.
+
+**Und wenn die Auto-Detection falsch liegt?**
+- Bei 3+ Branches mit Konflikten: Git wählt octopus → scheitert
+  → `git merge --abort` → `git merge branch1 && git merge branch2`
+- Bei Subtree-Merge ohne `-s`: Dateien landen im Root
+  → `git merge --abort` → nochmal mit `-s subtree`
+
+---
 
 ```
 -s ours  = Strategie: GANZER anderer Branch verworfen
