@@ -65,78 +65,238 @@ Alles noch clean. Jetzt wird Schritt für Schritt aufgebaut.
 
 ### Demo A: Externes Projekt per `subtree add` einbinden
 
+**Ziel:** Das externe `git-subtree`-Repo als Unterordner `vendor/bootstrap/` ins eigene Projekt holen.
+
+**Ausgangssituation:**
+```bash
+ls
+# → README.md  app.js  index.html  src/  style.css
+#    Kein vendor/! Das Projekt ist noch clean.
+```
+
 ```bash
 git subtree add --prefix=vendor/bootstrap \
   https://github.com/tdangschulz/git-subtree.git main \
   -m "chore: Bootstrap per Subtree eingebunden"
 ```
 
-**Was passiert?**
-1. Der gesamte Inhalt von `git-subtree` wird nach `vendor/bootstrap/` kopiert
-2. Ein Merge-Commit wird erzeugt
-3. Die komplette History des externen Projekts bleibt erhalten
+**👣 Schritt für Schritt, was Git intern macht:**
 
-**Prüfen:**
+| Schritt | Was passiert | Für den User sichtbar? |
+|---|---|---|
+| **1. Fetch** | Git kontaktiert `https://github.com/tdangschulz/git-subtree.git` und lädt den `main`-Branch in den temporären Cache (`FETCH_HEAD`) | Ja — „git fetch … main" erscheint in der Ausgabe |
+| **2. Metadaten anpassen** | Git merkt sich: die Dateien aus dem externen Repo müssen nach `vendor/bootstrap/` verschoben werden (das `--prefix`). Die History bleibt aber **unverändert** erhalten | Nein — passiert im Hintergrund |
+| **3. Merge ausführen** | Git führt intern `git merge -s subtree FETCH_HEAD` aus. Die `-s subtree`-Strategie sorgt dafür, dass alle Pfade automatisch um `vendor/bootstrap/` ergänzt werden | Ja — „Merge made by the 'subtree' strategy." |
+| **4. Merge-Commit erstellen** | Ein neuer Commit mit **zwei Eltern** entsteht: Eltern 1 = dein vorheriger `main`, Eltern 2 = der letzte Commit des externen Repos (`c3c514f feat: Primary Button`). Die Commit-Message ist dein `-m`-Text | Ja — im `git log` sichtbar |
+| **5. Arbeitsverzeichnis aktualisieren** | Der gesamte Inhalt von `git-subtree` liegt jetzt physisch unter `vendor/bootstrap/` | Ja — `ls vendor/bootstrap/` zeigt die Dateien |
+
+---
+
+**🔍 Prüfen Schritt 1: Der Ordner ist da**
+
 ```bash
-ls vendor/bootstrap/           # Alle Bootstrap-Dateien
-git log --oneline --graph --all  # Merge-Commit sichtbar
-git log --oneline vendor/bootstrap/bootstrap.css  # Volle Bootstrap-History!
+ls vendor/bootstrap/
+# → bootstrap.css  grid.css  LICENSE  README.md
 ```
 
-> **🗣️ Erklären:** Andere klonen dein Repo → `vendor/bootstrap/` ist sofort da.
-> Kein `git submodule update` nötig. Alle Dateien sind "echt" im Repo.
+Alle Dateien des externen Repos liegen jetzt **physisch** in deinem Projekt.
+
+---
+
+**🔍 Prüfen Schritt 2: Der Merge-Commit im Log**
+
+```bash
+git log --oneline --graph --all
+```
+
+```
+*   1234567 chore: Bootstrap per Subtree eingebunden      ← NEU: Merge-Commit
+|\\
+| * c3c514f feat: Primary Button                          ← externe History
+| * c7ef15b feat: Grid-System
+| * c94b50e feat: Button-Styles
+| * 6119724 chore: Lizenz hinzugefügt
+| * b5c3180 Initial commit: Bootstrap v1.0
+*
+* eb110ab feat: Basis-Stylesheet                          ← deine eigenen Commits
+* c2ab766 feat: Version-Modul
+* fc6200b feat: Hello-Funktion
+* 373f871 feat: JavaScript-Grundstruktur
+* f858d9e Initial commit: WebApp-Setup
+```
+
+**Wichtig:** Die 5 Bootstrap-Commits (`b5c3180` → `c3c514f`) sind **nicht** in deinem Repo passiert. Sie wurden vom externen Repo übernommen. Die Pfeile `|` und `\\` zeigen, dass der Merge-Commit zwei Eltern hat.
+
+---
+
+**🔍 Prüfen Schritt 3: History einzelner Dateien**
+
+```bash
+git log --oneline vendor/bootstrap/bootstrap.css
+# → Zeigt NUR die Commits, die bootstrap.css betreffen:
+#   c3c514f feat: Primary Button
+#   c94b50e feat: Button-Styles
+#   b5c3180 Initial commit: Bootstrap v1.0
+```
+
+Git trackt jede Datei einzeln — auch über Repo-Grenzen hinweg.
+
+---
+
+**🗣️ Zu erklären:**
+
+> **„Externes Projekt lokal verfügbar machen — alle Dateien liegen physisch im Repo, kein Submodule-Update nötig beim Klonen."**
 
 ---
 
 ### Demo B: Updates vom externen Projekt ziehen
 
-Mach einen neuen Commit im externen Repo auf GitHub und pull ihn rein:
+**Ziel:** Eine neue Version des externen Projekts (v2.0) einspielen — so wie du später `git pull` machen würdest, um Updates einer Library zu bekommen.
+
+**Voraussetzung:** Ein neuer Commit muss im externen Repo existieren.
+
+**Variante — Commit ins echte GitHub-Repo pushen:**
+
+Öffne <https://github.com/tdangschulz/git-subtree> im Browser, editiere `bootstrap.css` und ersetze `v1.2` durch `v2.0`.
+
+**Oder lokal (braucht kein Internet):**
+```bash
+git clone https://github.com/tdangschulz/git-subtree.git /tmp/git-subtree
+cd /tmp/git-subtree
+echo "/*! Bootstrap v2.0 */" > bootstrap.css
+git add . && git commit -m "Release v2.0"
+git push origin main
+cd -
+```
+
+**Jetzt das Update einspielen:**
 
 ```bash
-# Neues Release im externen Repo (z.B. auf GitHub UI oder lokal klonen)
-# Release v2.0 auf main pushen …
-
-# Update ins Hauptprojekt holen
 git subtree pull --prefix=vendor/bootstrap \
   https://github.com/tdangschulz/git-subtree.git main \
   -m "chore: Bootstrap auf v2.0 aktualisiert"
 ```
 
-**Prüfen:**
+---
+
+**👣 Schritt für Schritt, was Git intern macht:**
+
+| Schritt | Was passiert | Für den User sichtbar? |
+|---|---|---|
+| **1. Fetch** | Wie bei `git fetch`: Git lädt die neue Historie vom externen Repo. Der neue Commit (v2.0) landet im lokalen Cache | Ja — „From https://github.com/…" |
+| **2. Merge-Base suchen** | Git sucht den **gemeinsamen Vorfahren** zwischen der aktuellen `vendor/bootstrap/` und dem externen `main`. In unserem Fall: der letzte Merge-Commit aus Demo A | Nein |
+| **3. 3-Wege-Merge** | Git vergleicht drei Versionen:
+   - **Base:** Der letzte gemeinsame Stand (Bootstrap v1.2)
+   - **Ours:** Dein aktuelles `vendor/bootstrap/` (v1.2, unverändert)
+   - **Theirs:** Der neue externe Commit (v2.0)
+   Da du keine lokalen Änderungen hattest, ist das ein **Clean Fast-Forward** | Ja — „Merge made by the 'subtree' strategy." |
+| **4. Neuer Merge-Commit** | Ein weiterer Merge-Commit entsteht. Eltern 1 = dein alter `main`, Eltern 2 = der v2.0 Commit | Ja |
+| **5. vendor/ aktualisieren** | `vendor/bootstrap/bootstrap.css` enthält jetzt „Bootstrap v2.0" | Ja |
+
+---
+
+**🔍 Prüfen:**
+
 ```bash
-cat vendor/bootstrap/bootstrap.css   # Zeigt v2.0
-git log --oneline vendor/bootstrap/  # Neue Version sichtbar
+cat vendor/bootstrap/bootstrap.css
+# → /*! Bootstrap v2.0 */
 ```
 
-> **🗣️ Erklären:** `subtree pull` = `fetch + merge -s subtree`.
-> Die History bleibt erhalten — du siehst genau, wann aktualisiert wurde.
+```bash
+git log --oneline vendor/bootstrap/
+# → Zeigt jetzt auch den neuen v2.0 Commit aus dem externen Repo
+```
+
+```bash
+git log --oneline --graph --all
+# → Wieder ein Merge-Commit, diesmal mit zwei Commits mehr:
+#   - chore: Bootstrap auf v2.0 aktualisiert  (dein Merge)
+#   - Release v2.0                             (extern)
+```
+
+---
+
+**🗣️ Zu erklären:**
+
+> **„`subtree pull` ist nur `git fetch` + `git merge -s subtree`. Genau wie `git pull` = `git fetch` + `git merge`, nur mit Subtree-Strategie.**"
 
 ---
 
 ### Demo C: Low-Level — `git merge -s subtree`
 
-Mach dasselbe nochmal, aber **ohne** das `subtree`-Kommando:
+**Ziel:** Dasselbe wie Demo B, aber **ohne** den `git subtree`-Wrapper.
+Du siehst: `git subtree` ist nur ein Komfortbefehl für `git fetch` + `git merge -s subtree`.
+
+**Ausgangssituation:** Mach Demo A und B rückgängig, um bei einem sauberen Stand zu starten (nur WebApp + Bootstrap v1.0 via subtree add):
 
 ```bash
-# Zurücksetzen auf den Stand vor Demo B
 git reset --hard HEAD~1
+# Entfernt den Merge-Commit aus Demo B.
+# vendor/bootstrap/ ist wieder auf v1.2
+```
 
-# Fetch vom externen Repo
+---
+
+**Schritt 1: Fetch — das externe Repo lokal verfügbar machen**
+
+Ohne `git subtree pull` müssen wir das externe Repo selbst fetchen:
+
+```bash
 git fetch https://github.com/tdangschulz/git-subtree.git main:refs/remotes/extern/bootstrap
+```
 
-# Merge MIT subtree-Strategie
-git merge -s subtree --allow-unrelated-histories \
+**Was passiert?**
+
+| Teil | Bedeutung |
+|---|---|
+| `git fetch <url> <src>:<dst>` | Holt den `main`-Branch des externen Repos |
+| `refs/remotes/extern/bootstrap` | Speichert ihn als Remote-Tracking-Branch `extern/bootstrap` (ein lokaler Alias) |
+
+**Prüfen:**
+```bash
+git branch -a
+# → remotes/extern/bootstrap  ← der neue Remote-Branch
+```
+
+---
+
+**Schritt 2: Merge mit Subtree-Strategie**
+
+```bash
+git merge -s subtree \
   extern/bootstrap -m "chore: Bootstrap v2.0 (merge -s subtree)"
 ```
 
-**Vergleiche das Log:**
+**Was passiert Schritt für Schritt:**
+
+| Schritt | Was passiert |
+|---|---|
+| **1. Merge-Base** | Git findet automatisch den gemeinsamen Vorfahren: den Subtree-Merge-Commit aus Demo A. Kein `--allow-unrelated-histories` nötig |
+| **2. `-s subtree`** | Sagt Git: „Beim Mergen verschiebe alle Dateien aus `extern/bootstrap` automatisch in den Subtree-Pfad, den Git aus dem letzten Subtree-Merge kennt" (= `vendor/bootstrap/`) |
+| **3. Merge-Commit** | Wie in Demo B: ein Merge-Commit mit zwei Eltern |
+
+**Ohne `-s subtree`** würden die Bootstrap-Dateien im Root landen (siehe Demo E).
+
+---
+
+**🔍 Prüfen — gleiches Ergebnis wie Demo B:**
+
 ```bash
 git log --oneline --graph --all
+# → Selbe Struktur wie nach Demo B:
+#   Einen Merge-Commit, dahinter den v2.0 Commit
 ```
 
-> **🗣️ Erklären:** `git subtree` ist nur ein Wrapper für `fetch + merge -s subtree`.
-> Das `-s subtree` sorgt dafür, dass Git die Dateien automatisch nach
-> `vendor/bootstrap/` verschiebt — obwohl sie im externen Repo im Root lagen.
+```bash
+cat vendor/bootstrap/bootstrap.css
+# → /*! Bootstrap v2.0 */
+```
+
+---
+
+**🗣️ Zu erklären:**
+
+> **„`git subtree add/pull` sind Wrapper. Intern machen sie genau das hier: `git fetch` + `git merge -s subtree`. Der einzige Zusatz von `subtree` ist die `--prefix`-Verwaltung — Git merkt sich, in welchen Ordner die Dateien gehören, und wendet das bei jedem Subtree-Merge automatisch an.**"
 
 ---
 
