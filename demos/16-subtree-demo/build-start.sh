@@ -1,6 +1,7 @@
 #!/bin/bash
 # build-start.sh — Erzeugt das start.tar.gz für die Subtree-Demo
-# Führe dies aus, wenn du das Demo-Repo neu aufbauen willst.
+# Das start-Repo enthält NUR das Hauptprojekt (WebApp).
+# Der subtree-vendor-Ordner wird erst LIVE in der Demo hinzugefügt.
 #
 # Verwendung: bash build-start.sh
 
@@ -9,10 +10,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR=$(mktemp -d)
 
-echo "📦 Baue Subtree-Demo-Repo..."
-
-# Externes Repo auf GitHub
-GIT_SUBTREE_REPO="https://github.com/tdangschulz/git-subtree.git"
+echo "📦 Baue Subtree-Demo-Repo (nur WebApp, kein vendor)..."
 
 # ============================================================
 # 1. Hauptprojekt (WebApp)
@@ -44,37 +42,25 @@ echo "/* WebApp Styles */ body { font-family: sans-serif; margin: 0; }" > style.
 git add .
 git commit -m "feat: Basis-Stylesheet"
 
-# ============================================================
-# 2. Externes Repo per Subtree ins Hauptprojekt einbinden
-# ============================================================
 cd "$MAIN_DIR"
-git subtree add --prefix=vendor/bootstrap "$GIT_SUBTREE_REPO" main \
-  -m "chore: Bootstrap per Subtree von github.com/tdangschulz/git-subtree eingebunden"
-
-# Noch ein eigener Commit im Hauptprojekt
-echo "# WebApp - v1.0" > README.md
-echo "Uses Bootstrap via git subtree from tdangschulz/git-subtree" >> README.md
-git add README.md
-git commit -m "docs: README aktualisiert"
 
 # ============================================================
-# 3. Saubermachen
+# 2. Saubermachen
 # ============================================================
-cd "$MAIN_DIR"
 git checkout main
 
 # Log anzeigen
 echo ""
-echo "=== Fertiges Repo ==="
+echo "=== Fertiges Repo (NUR WebApp, KEIN vendor!) ==="
 git log --oneline --graph --all
 echo ""
 
-echo "=== Branches ==="
-git branch -a
+echo "=== Dateien ==="
+ls
 echo ""
 
 # ============================================================
-# 4. Start-Paket erstellen
+# 3. Start-Paket erstellen
 # ============================================================
 cd "$BUILD_DIR"
 tar czf "$SCRIPT_DIR/start.tar.gz" start/
@@ -89,3 +75,4 @@ echo "  cd demos/16-subtree-demo"
 echo "  tar xzf start.tar.gz"
 echo "  cd start"
 echo "  git log --oneline --graph --all"
+echo "  ls  # → KEIN vendor/ Ordner!"
