@@ -47,6 +47,9 @@ Beide machen am Ende dasselbe — `subtree add` ruft intern `merge -s subtree` a
 
 ## 🖥️ Live-Demo
 
+Das externe Projekt liegt auf GitHub:
+👉 <https://github.com/tdangschulz/git-subtree>
+
 ### Setup
 
 ```bash
@@ -54,23 +57,24 @@ cd demos/16-subtree-demo/start
 git log --oneline --graph --all
 ```
 
-Du siehst zwei Branches:
-- **`main`** — Dein Hauptprojekt („WebApp")
-- **`lib/bootstrap`** — Ein externes „Bootstrap"-Repo (separate History!)
+Du siehst das Hauptprojekt („WebApp") — Bootstrap ist bereits per Subtree
+von `tdangschulz/git-subtree` eingebunden.
 
 ---
 
 ### Demo A: Externes Projekt per `subtree add` einbinden
 
+So würde es von Grund auf aussehen. (Im start-Repo ist es schon drin.)
+
 ```bash
-# Den fetch-benannten Branch (lib/bootstrap) per subtree einbinden
-git subtree add --prefix=vendor/bootstrap lib/bootstrap main \
+git subtree add --prefix=vendor/bootstrap \
+  https://github.com/tdangschulz/git-subtree.git main \
   -m "chore: Bootstrap per Subtree eingebunden"
 ```
 
 **Was passiert?**
-1. Der gesamte Inhalt von `lib/bootstrap` wird nach `vendor/bootstrap/` kopiert
-2. Ein Merge-Commit wird erzeugt (mit `--squash` oder voller History)
+1. Der gesamte Inhalt von `git-subtree` wird nach `vendor/bootstrap/` kopiert
+2. Ein Merge-Commit wird erzeugt
 3. Die komplette History des externen Projekts bleibt erhalten
 
 **Prüfen:**
@@ -87,17 +91,23 @@ git log --oneline vendor/bootstrap/bootstrap.css  # Volle Bootstrap-History!
 
 ### Demo B: Updates vom externen Projekt ziehen
 
-Simuliere eine neue Version im externen Repo:
+Simuliere eine neue Version — entweder auf GitHub pushen **oder** lokal:
 
+**Variante A — Mit dem mitgelieferten lokalen Klon (kein Internet nötig):**
 ```bash
-# Neues Release im Bootstrap-Repo
-cd /tmp/bootstrap
+cd bootstrap-external
 echo "/* Bootstrap v2.0 */" > bootstrap.css
 git add . && git commit -m "Release v2.0"
-cd -
+cd ..
 
-# Update ins Hauptprojekt holen
-git subtree pull --prefix=vendor/bootstrap /tmp/bootstrap main \
+git subtree pull --prefix=vendor/bootstrap bootstrap-external main \
+  -m "chore: Bootstrap auf v2.0 aktualisiert"
+```
+
+**Variante B — Mit dem echten GitHub-Repo (Internet):**
+```bash
+git subtree pull --prefix=vendor/bootstrap \
+  https://github.com/tdangschulz/git-subtree.git main \
   -m "chore: Bootstrap auf v2.0 aktualisiert"
 ```
 
@@ -121,7 +131,7 @@ Mach dasselbe nochmal, aber **ohne** das `subtree`-Kommando:
 git reset --hard HEAD~1
 
 # Fetch vom externen Repo
-git fetch /tmp/bootstrap main:refs/remotes/extern/bootstrap
+git fetch bootstrap-external main:refs/remotes/extern/bootstrap
 
 # Merge MIT subtree-Strategie
 git merge -s subtree --allow-unrelated-histories \
@@ -150,14 +160,14 @@ echo "/* Angepasst für WebApp */" >> vendor/bootstrap/bootstrap.css
 git add vendor/bootstrap/
 git commit -m "fix: Bootstrap an WebApp angepasst"
 
-# Änderungen ans externe Repo zurückgeben
-git subtree push --prefix=vendor/bootstrap /tmp/bootstrap main
+# Änderungen ans externe Repo zurückgeben (lokal oder GitHub)
+git subtree push --prefix=vendor/bootstrap bootstrap-external main
 ```
 
 **Prüfen:**
 ```bash
-cat /tmp/bootstrap/bootstrap.css   # Zeigt deine Änderung!
-git -C /tmp/bootstrap log --oneline  # Dein Commit ist dort
+cat bootstrap-external/bootstrap.css   # Zeigt deine Änderung!
+cd bootstrap-external && git log --oneline  # Dein Commit ist dort
 ```
 
 > **🗣️ Erklären:** `subtree push` splittet die History aus dem Unterordner
@@ -173,7 +183,7 @@ im Root statt im gewünschten Ordner!
 
 ```bash
 # Neues externes Projekt (ohne subtree-Strategie!)
-git fetch /tmp/bootstrap main:refs/remotes/extern/bootstrap-ohne
+git fetch bootstrap-external main:refs/remotes/extern/bootstrap-ohne
 
 git merge --allow-unrelated-histories \
   extern/bootstrap-ohne -m "Merge ohne subtree"
@@ -200,7 +210,7 @@ Projekts importieren:
 ```bash
 # Squash-Variante
 git subtree add --prefix=vendor/bootstrap --squash \
-  /tmp/bootstrap main -m "chore: Bootstrap (gesquasht)"
+  bootstrap-external main -m "chore: Bootstrap (gesquasht)"
 
 git log --oneline vendor/bootstrap/
 # → Nur ein Commit: "chore: Bootstrap (gesquasht)"
@@ -212,7 +222,7 @@ git reset --hard HEAD~1
 
 # Ohne --squash:
 git subtree add --prefix=vendor/bootstrap \
-  /tmp/bootstrap main -m "chore: Bootstrap (volle History)"
+  bootstrap-external main -m "chore: Bootstrap (volle History)"
 
 git log --oneline vendor/bootstrap/
 # → ALLE Bootstrap-Commits sichtbar
@@ -232,16 +242,17 @@ git log --oneline vendor/bootstrap/
 cd demos/16-subtree-demo/start
 
 # === 1) Subtree einbinden ===
-git subtree add --prefix=vendor/bootstrap lib/bootstrap main \
+git subtree add --prefix=vendor/bootstrap \
+  https://github.com/tdangschulz/git-subtree.git main \
   -m "chore: Bootstrap eingebunden"
 
-# === 2) Update simulieren ===
-cd /tmp/bootstrap
+# === 2) Update simulieren (lokal) ===
+cd bootstrap-external
 echo "/* Bootstrap v2.0 */" > bootstrap.css
 git add . && git commit -m "Release v2.0"
-cd -
+cd ..
 
-git subtree pull --prefix=vendor/bootstrap /tmp/bootstrap main \
+git subtree pull --prefix=vendor/bootstrap bootstrap-external main \
   -m "chore: Bootstrap auf v2.0"
 
 # === 3) Eigene Änderung + Push zurück ===
@@ -249,11 +260,11 @@ echo "/* WebApp-Anpassung */" >> vendor/bootstrap/bootstrap.css
 git add vendor/bootstrap/
 git commit -m "fix: An WebApp angepasst"
 
-git subtree push --prefix=vendor/bootstrap /tmp/bootstrap main
+git subtree push --prefix=vendor/bootstrap bootstrap-external main
 
 # === 4) Prüfen ===
 git log --oneline --graph --all
-cat /tmp/bootstrap/bootstrap.css   # Änderung da
+cat bootstrap-external/bootstrap.css   # Änderung da
 ```
 
 ---
@@ -275,6 +286,7 @@ cat /tmp/bootstrap/bootstrap.css   # Änderung da
 
 ## 📚 Weiterführend
 
+- Externes Projekt für diese Demo: <https://github.com/tdangschulz/git-subtree>
 - `git subtree` ist kein Built-in-Befehl — steckt in `git-contrib` und ist bei den meisten Distributionen vorinstalliert
 - [`git-merge-subtree`](https://git-scm.com/docs/git-merge#Documentation/git-merge.txt-merge-strategies) in der Git-Manpage
 - Submodule: `git submodule add <repo> <pfad>` — alternative, verlinkte Lösung
