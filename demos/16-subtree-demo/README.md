@@ -55,16 +55,15 @@ Das externe Projekt liegt auf GitHub:
 ```bash
 cd demos/16-subtree-demo/start
 git log --oneline --graph --all
+ls
 ```
 
-Du siehst das Hauptprojekt („WebApp") — Bootstrap ist bereits per Subtree
-von `tdangschulz/git-subtree` eingebunden.
+Du siehst das Hauptprojekt („WebApp") — **kein vendor/-Ordner**.
+Alles noch clean. Jetzt wird Schritt für Schritt aufgebaut.
 
 ---
 
 ### Demo A: Externes Projekt per `subtree add` einbinden
-
-So würde es von Grund auf aussehen. (Im start-Repo ist es schon drin.)
 
 ```bash
 git subtree add --prefix=vendor/bootstrap \
@@ -228,6 +227,7 @@ git log --oneline vendor/bootstrap/
 ```bash
 # === Setup ===
 cd demos/16-subtree-demo/start
+ls  # kein vendor/ - alles noch clean
 
 # === 1) Subtree einbinden ===
 git subtree add --prefix=vendor/bootstrap \
