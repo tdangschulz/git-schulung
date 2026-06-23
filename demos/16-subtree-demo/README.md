@@ -91,21 +91,13 @@ git log --oneline vendor/bootstrap/bootstrap.css  # Volle Bootstrap-History!
 
 ### Demo B: Updates vom externen Projekt ziehen
 
-Simuliere eine neue Version — entweder auf GitHub pushen **oder** lokal:
+Mach einen neuen Commit im externen Repo auf GitHub und pull ihn rein:
 
-**Variante A — Mit dem mitgelieferten lokalen Klon (kein Internet nötig):**
 ```bash
-cd bootstrap-external
-echo "/* Bootstrap v2.0 */" > bootstrap.css
-git add . && git commit -m "Release v2.0"
-cd ..
+# Neues Release im externen Repo (z.B. auf GitHub UI oder lokal klonen)
+# Release v2.0 auf main pushen …
 
-git subtree pull --prefix=vendor/bootstrap bootstrap-external main \
-  -m "chore: Bootstrap auf v2.0 aktualisiert"
-```
-
-**Variante B — Mit dem echten GitHub-Repo (Internet):**
-```bash
+# Update ins Hauptprojekt holen
 git subtree pull --prefix=vendor/bootstrap \
   https://github.com/tdangschulz/git-subtree.git main \
   -m "chore: Bootstrap auf v2.0 aktualisiert"
@@ -131,7 +123,7 @@ Mach dasselbe nochmal, aber **ohne** das `subtree`-Kommando:
 git reset --hard HEAD~1
 
 # Fetch vom externen Repo
-git fetch bootstrap-external main:refs/remotes/extern/bootstrap
+git fetch https://github.com/tdangschulz/git-subtree.git main:refs/remotes/extern/bootstrap
 
 # Merge MIT subtree-Strategie
 git merge -s subtree --allow-unrelated-histories \
@@ -151,8 +143,8 @@ git log --oneline --graph --all
 
 ### Demo D: Eigene Änderungen ans externe Projekt zurückgeben
 
-Du hast Bootstrap-Code in deinem Projekt angepasst und willst die Änderung
-ins originale Bootstrap-Repo zurückspielen:
+Du hast Bootstrap in deinem Projekt angepasst und willst die Änderung
+ins originale Repo zurückspielen:
 
 ```bash
 # Änderung in vendor/bootstrap/ vornehmen
@@ -160,14 +152,9 @@ echo "/* Angepasst für WebApp */" >> vendor/bootstrap/bootstrap.css
 git add vendor/bootstrap/
 git commit -m "fix: Bootstrap an WebApp angepasst"
 
-# Änderungen ans externe Repo zurückgeben (lokal oder GitHub)
-git subtree push --prefix=vendor/bootstrap bootstrap-external main
-```
-
-**Prüfen:**
-```bash
-cat bootstrap-external/bootstrap.css   # Zeigt deine Änderung!
-cd bootstrap-external && git log --oneline  # Dein Commit ist dort
+# Änderungen ans externe Repo zurückgeben
+git subtree push --prefix=vendor/bootstrap \
+  https://github.com/tdangschulz/git-subtree.git main
 ```
 
 > **🗣️ Erklären:** `subtree push` splittet die History aus dem Unterordner
@@ -183,7 +170,7 @@ im Root statt im gewünschten Ordner!
 
 ```bash
 # Neues externes Projekt (ohne subtree-Strategie!)
-git fetch bootstrap-external main:refs/remotes/extern/bootstrap-ohne
+git fetch https://github.com/tdangschulz/git-subtree.git main:refs/remotes/extern/bootstrap-ohne
 
 git merge --allow-unrelated-histories \
   extern/bootstrap-ohne -m "Merge ohne subtree"
@@ -204,13 +191,13 @@ git reset --hard ORIG_HEAD
 
 ### Demo F: Subtree mit `--squash`
 
-Manchmal willst du nicht die ganze 500-Commit-History eines externen
-Projekts importieren:
+Manchmal willst du nicht die ganze 5-Commit-History importieren:
 
 ```bash
 # Squash-Variante
 git subtree add --prefix=vendor/bootstrap --squash \
-  bootstrap-external main -m "chore: Bootstrap (gesquasht)"
+  https://github.com/tdangschulz/git-subtree.git main \
+  -m "chore: Bootstrap (gesquasht)"
 
 git log --oneline vendor/bootstrap/
 # → Nur ein Commit: "chore: Bootstrap (gesquasht)"
@@ -222,7 +209,8 @@ git reset --hard HEAD~1
 
 # Ohne --squash:
 git subtree add --prefix=vendor/bootstrap \
-  bootstrap-external main -m "chore: Bootstrap (volle History)"
+  https://github.com/tdangschulz/git-subtree.git main \
+  -m "chore: Bootstrap (volle History)"
 
 git log --oneline vendor/bootstrap/
 # → ALLE Bootstrap-Commits sichtbar
@@ -246,13 +234,9 @@ git subtree add --prefix=vendor/bootstrap \
   https://github.com/tdangschulz/git-subtree.git main \
   -m "chore: Bootstrap eingebunden"
 
-# === 2) Update simulieren (lokal) ===
-cd bootstrap-external
-echo "/* Bootstrap v2.0 */" > bootstrap.css
-git add . && git commit -m "Release v2.0"
-cd ..
-
-git subtree pull --prefix=vendor/bootstrap bootstrap-external main \
+# === 2) Update pullen ===
+git subtree pull --prefix=vendor/bootstrap \
+  https://github.com/tdangschulz/git-subtree.git main \
   -m "chore: Bootstrap auf v2.0"
 
 # === 3) Eigene Änderung + Push zurück ===
@@ -260,11 +244,11 @@ echo "/* WebApp-Anpassung */" >> vendor/bootstrap/bootstrap.css
 git add vendor/bootstrap/
 git commit -m "fix: An WebApp angepasst"
 
-git subtree push --prefix=vendor/bootstrap bootstrap-external main
+git subtree push --prefix=vendor/bootstrap \
+  https://github.com/tdangschulz/git-subtree.git main
 
 # === 4) Prüfen ===
 git log --oneline --graph --all
-cat bootstrap-external/bootstrap.css   # Änderung da
 ```
 
 ---
